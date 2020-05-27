@@ -57,5 +57,5 @@ All other configuration options can be left unchanged.
 
 # Usage:
 
-  Insert the CD into the drive. The CD will be checked to see if it has been previously ripped. If not, the rippinf process will take about 12 minutes. After this, the CD will be ejected and moOde will play the ripped files. If the CD has been previously ripped, it will be ejected and moOde will play the ripped files.
+  Insert the CD into the drive. The CD will be checked to see if it has been previously ripped. If not, the ripping process will take about 12 minutes. After this, the CD will be ejected and moOde will play the ripped files. If the CD has been previously ripped, it will be ejected and moOde will play the ripped files.
 
