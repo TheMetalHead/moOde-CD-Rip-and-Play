@@ -50,10 +50,7 @@ MUSIC_SUB_DIR="CD" : This is optional. It can be used to differentiate between y
 
 DEFAULT_VOLUME=10 : The default volume that 'moOde' will play the cd at.
 
-Set the log level as required by uncommenting one of the following:
-  #_LOG_LEVEL=${LOG_LEVEL_NOLOG}
-  #_LOG_LEVEL=${LOG_LEVEL_LOG}
-  #_LOG_LEVEL=${LOG_LEVEL_DEBUG}
+Set the log level as required by uncommenting one of the following: #_LOG_LEVEL=${LOG_LEVEL_NOLOG} or #_LOG_LEVEL=${LOG_LEVEL_LOG} or #_LOG_LEVEL=${LOG_LEVEL_DEBUG}
 
 All other configuration options can be left unchanged.
 
