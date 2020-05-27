@@ -1,17 +1,69 @@
 # moOde-CD-Rip-and-Play
 
-A companion program for moOde (http://moodeaudio.org/) to rip CDs and play them.
+A companion program for moOde (http://moodeaudio.org/) to rip and tag CDs to 320kbps mp3 files and play them.
+
+This allows a user to play their CDs without using a computer or smart phone. The volume being adjusted using a rotary encoder.
+CDs that have already been ripped can be batch queued.
 
 # Requirements:
 
   A working moOde image (tested on v6.5.0) on a Raspberry Pi3 . (Rpi4 not tested).
   An external CD drive attached to the USB port.
 
-CDs that have already been ripped can be batch queued.
+# Installation:
 
-There is an installation script 'Install-cd-rip.sh' that creates the required links for moOde.
+There is an bash script called 'Install-cd-rip.sh' that installs the required programs and creates the required links for moOde.
+
+The required programs are:
+  cd-discid
+  eject
+  flock
+  touch
+  truncate
+  mpc
+  mpd
+  cdparanoia
+  lame
+  glyrc
+  eyeD3
+
+# Configuration:
 
 Edit the configuration file as required: cd-rip-and-or-play.conf
+
+The music files can reside in either:
+MUSIC_HOME_PATH/RIPPED_MUSIC_DIR/MUSIC_SUB_DIR
+or
+MUSIC_HOME_PATH/RIPPED_MUSIC_DIR
+
+The full path to the music files. Do not add any trailing slashes.
+MUSIC_HOME_PATH="/home/pi"
+
+Directory containing the music files. Do not add any leading/trailing slashes.
+RIPPED_MUSIC_DIR="Music-CD"
+
+WARNING: The owner existance is not checked.
+RIPPED_MUSIC_OWNER="pi:pi"
+
+The name that is displayed in the 'moOde' library menu. Do not add any leading/trailing slashes.
+LIBRARY_TAG="My CDs"
+
+This should be CD, NAS, USB or SDCARD. It is the name used in the '/mnt' directory. Do not add any leading/trailing slashes.
+MUSIC_MNT_SOURCE="CD"
+
+This is optional. It can be used to differentiate between your music files and ripped music files if they are both kept in the same 'RIPPED_MUSIC_DIR'. It must either be empty ("") or have no slashes at the first and last characters.
+MUSIC_SUB_DIR="CD"
+
+The default volume that 'moOde' will play the cd at.
+DEFAULT_VOLUME=10
+
+Set the log level as required by uncommenting one of the following:
+  #_LOG_LEVEL=${LOG_LEVEL_NOLOG}
+  #_LOG_LEVEL=${LOG_LEVEL_LOG}
+  #_LOG_LEVEL=${LOG_LEVEL_DEBUG}
+
+All other configuration options can be left unchanged.
+
 
 # Usage:
 
