@@ -36,26 +36,19 @@ MUSIC_HOME_PATH/RIPPED_MUSIC_DIR/MUSIC_SUB_DIR
 or
 MUSIC_HOME_PATH/RIPPED_MUSIC_DIR
 
-The full path to the music files. Do not add any trailing slashes.
-MUSIC_HOME_PATH="/home/pi"
+MUSIC_HOME_PATH="/home/pi" : The full path to the music files. Do not add any trailing slashes.
 
-Directory containing the music files. Do not add any leading/trailing slashes.
-RIPPED_MUSIC_DIR="Music-CD"
+RIPPED_MUSIC_DIR="Music-CD" : Directory containing the music files. Do not add any leading/trailing slashes.
 
-WARNING: The owner existance is not checked.
-RIPPED_MUSIC_OWNER="pi:pi"
+RIPPED_MUSIC_OWNER="pi:pi" : WARNING: The owner existance is not checked.
 
-The name that is displayed in the 'moOde' library menu. Do not add any leading/trailing slashes.
-LIBRARY_TAG="My CDs"
+LIBRARY_TAG="My CDs" : The name that is displayed in the 'moOde' library menu. Do not add any leading/trailing slashes.
 
-This should be CD, NAS, USB or SDCARD. It is the name used in the '/mnt' directory. Do not add any leading/trailing slashes.
-MUSIC_MNT_SOURCE="CD"
+MUSIC_MNT_SOURCE="CD" : This should be CD, NAS, USB or SDCARD. It is the name used in the '/mnt' directory. Do not add any leading/trailing slashes.
 
-This is optional. It can be used to differentiate between your music files and ripped music files if they are both kept in the same 'RIPPED_MUSIC_DIR'. It must either be empty ("") or have no slashes at the first and last characters.
-MUSIC_SUB_DIR="CD"
+MUSIC_SUB_DIR="CD" : This is optional. It can be used to differentiate between your music files and ripped music files if they are both kept in the same 'RIPPED_MUSIC_DIR'. It must either be empty ("") or have no slashes at the first and last characters.
 
-The default volume that 'moOde' will play the cd at.
-DEFAULT_VOLUME=10
+DEFAULT_VOLUME=10 : The default volume that 'moOde' will play the cd at.
 
 Set the log level as required by uncommenting one of the following:
   #_LOG_LEVEL=${LOG_LEVEL_NOLOG}
