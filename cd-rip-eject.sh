@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 ##################################################################
-# Work out the CDROM path. Must have no trailng slash.
+# Work out the CDROM path. Must have no trailing slash.
 ##################################################################
 
 CDROM="/dev/cdrom"
