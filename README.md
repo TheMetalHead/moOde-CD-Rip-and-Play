@@ -1,12 +1,12 @@
 # moOde-CD-Rip-and-Play
-Moode CD rip and play
+MoOde CD rip and play
 
-A program to optionally rip a new CD and play it if it has been ripped.
+A companion program for moOde (http://moodeaudio.org/) to rip CDs and play them.
 
 Requirements:
 
-  A working moOde image (v6.5.0 or better) on a Raspberry Pi3 . (Rpi4 not tested).
-  A CD drive attached to the USB port.
+  A working moOde image (tested on v6.5.0) on a Raspberry Pi3 . (Rpi4 not tested).
+  An external CD drive attached to the USB port.
 
 CDs that have already been ripped can be batch queued.
 
@@ -15,8 +15,5 @@ There is an installation script 'Install-cd-rip.sh' that creates the required li
 Edit the configuration file as required: cd-rip-and-or-play.conf
 
 Usage:
-  Insert the CD into the drive.
+  Insert the CD into the drive. The CD will be checked to see if it has been previously ripped. If not, the rippinf process will take about 12 minutes. After this, the CD will be ejected and moOde will play the ripped files. If the CD has been previously ripped, it will be ejected and moOde will play the ripped files.
 
-  If the CD is being ripped, this will take about 12 minutes. After this, the CD will be ejected and moOde will play the ripped files.
-
-  If the CD has already been ripped, moOde will eject the CD and play the ripped files after a few seconds.
