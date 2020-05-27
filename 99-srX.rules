@@ -1,0 +1,2 @@
+KERNEL=="sr[0-9]", ACTION=="change", ENV{ID_CDROM_MEDIA}=="1", ENV{ID_CDROM_MEDIA_TRACK_COUNT_AUDIO}=="[0-9]|[0-9][0-9]", TAG+="systemd", ENV{SYSTEMD_WANTS}="cd-rip-and-or-play.service"
+KERNEL=="sr[0-9]", ACTION=="change", ENV{DISK_EJECT_REQUEST}=="1", TAG+="systemd", ENV{SYSTEMD_WANTS}="cd-rip-eject.service"

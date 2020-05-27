@@ -1,0 +1,60 @@
+# Make a udev rule to trigger the service start when a cd is inserted.
+# Create a file '/etc/udev/rules.d/99-srX-cd-rip.rules' with the following:
+#
+#	KERNEL=="sr[0-9]", ACTION=="change", ENV{ID_CDROM_MEDIA}=="1", ENV{ID_CDROM_MEDIA_TRACK_COUNT_AUDIO}=="[0-9]|[0-9][0-9]", RUN+="/bin/systemctl start cd-rip.service
+#
+#	sudo chmod 644 /etc/udev/rules.d/99-srX-cd-rip.rules
+#	sudo chown root:root /etc/udev/rules.d/99-srX-cd-rip.rules
+#
+# This will trigger on any optical disk containing 1-99 audio tracks (this is the number permitted by the Red Book standard), any other disk will be ignored.
+#
+# Enable the udev rule:
+#
+#	sudo udevadm control --reload
+#
+# Add the systemd service:
+#
+#	cd /etc/systemd/system
+#	sudo ln -s /home/pi/Src/cd-rip/cd-rip.service
+#	sudo chmod 644 /home/pi/Src/cd-rip/cd-rip.service
+#	sudo chown root:root /home/pi/Src/cd-rip/cd-rip.service
+#	sudo systemctl daemon-reload
+#
+# Now when you insert a CD it should autorip. You can always test the
+#   progress of the ripping with: 'systemctl status cd-rip.service'.
+#
+# To update 'abcde', remove 'abcde' with 'sudo apt remove abcde', download the latest
+# version from here 2.9.2 at the time of writing. Untar it, enter the directory and run
+# 'sudo make install'. Since we removed the managed version of 'abcde' the dependencies
+# will be marked for removal. To stop this, install them:
+# 'sudo apt install vorbis-tools cd-discid fdkaac'. You might want to check for other
+# dependencies if you have a problems with 'apt-cache depends abcde'.
+#
+# We will use a oneshot service that can be called but doesn't persist. This is
+# needed because tasks called directly from udev that take longer than 60s get timed out.
+
+[Unit]
+Description=CD rip and-or play on insertion
+After=udisks-glue
+
+[Service]
+Type=oneshot
+
+#user=pi
+#group=pi
+
+RemainAfterExit=no
+
+# Ensure that this has the same path as in 'ExecStart'.
+WorkingDirectory=/home/pi/Src/cd-rip
+
+# Ensure that this has the same path as in 'WorkingDirectory'.
+ExecStart=/home/pi/Src/cd-rip/cd-rip-and-or-play.sh
+
+ExecStop=killall abcde-rip.sh
+
+#StandardOutput=syslog
+#StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
