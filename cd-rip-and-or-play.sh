@@ -2,7 +2,7 @@
 #
 # A CD ripping/playing program for 'moOde'.
 #
-# Reload udev rules ???
+# Do we need to reload udev rules ???
 #
 #	sudo udevadm control –reload
 
@@ -70,13 +70,13 @@ PIPE="${TEMP_DIR}/${_SCRIPTNAME}.pipe"
 # Only needed for test purposes.
 ##################################################################
 
-# echo "1 - ${_SCRIPTNAME}"
-# echo "2 - ${_FULLPATHNAME}"
-# echo "3 - ${_DIRECTORY}"
-# echo "4 - ${_CDRIP_CONFIG}"
-# echo "5 - ${_ABCDE_CONFIG}"
-# echo "6 - ${_CMD_ABCDE_PATCHED}"
-# echo "7 - ${LOGFILE}"
+# echo "Script name:       ${_SCRIPTNAME}"
+# echo "Full pathname:     ${_FULLPATHNAME}"
+# echo "Directory:         ${_DIRECTORY}"
+# echo "Cdrip comfig:      ${_CDRIP_CONFIG}"
+# echo "Abcde config:      ${_ABCDE_CONFIG}"
+# echo "Cmd abcde patched: ${_CMD_ABCDE_PATCHED}"
+# echo "Logfile:           ${LOGFILE}"
 
 
 
@@ -91,7 +91,7 @@ PIPE="${TEMP_DIR}/${_SCRIPTNAME}.pipe"
 _exit_terminate() {
 	_write_to_pipe "Done ${1}"
 
-	${CMD_ECHO} "[EXIT]    (${1}) All done. Exiting..." >> "${LOGFILE}"
+	${CMD_ECHO} "[EXIT]    All done. Exiting...(${1})" >> "${LOGFILE}"
 	_log_log ""
 	_log_log ""
 	_log_log ""
@@ -103,6 +103,8 @@ _exit_terminate() {
 
 ##################################################################
 # Write to the pipe if it is open.
+#
+# Used to send the cd rip states to another process.
 #
 # Usage:	_write_to_pipe	Message_To_send
 #
@@ -188,6 +190,7 @@ _log_fatal_and_exit() {
 
 	shift
 
+	# Displays the calling function name and the line number of the fatal test along with the exit code.
 	${CMD_ECHO} "[FATAL]   ${FUNCNAME[1]} : Line ${BASH_LINENO[0]} : Exit ${_L_EXIT_CODE} - ${*}" >> "${LOGFILE}"
 
 	${CMD_EJECT}
@@ -215,6 +218,7 @@ _log_if_fatal_and_exit() {
 		shift
 		shift
 
+		# Displays the calling function name and the line number of the fatal test along with the exit code and the commands error code.
 		${CMD_ECHO} "[FATAL]   ${FUNCNAME[1]} : Line ${BASH_LINENO[0]} : Exit ${_L_EXIT_CODE} - ${*} returned error code: ${_L_LAST_RESULT}" >> "${LOGFILE}"
 
 		${CMD_EJECT}
@@ -239,8 +243,10 @@ _log_debug() {
 # Utility functions.
 ##################################################################
 
+##################################################################
 # Usage:	_log_result	"${RESULT}"
-#
+##################################################################
+
 _log_result() {
 	local	_L_FOUND
 
@@ -267,8 +273,10 @@ _log_result() {
 
 
 
+##################################################################
 # Usage:	_check_for_required_command	Exit_code	Required_command
-#
+##################################################################
+
 _check_for_required_command() {
 	local	_L_CMD
 
@@ -288,10 +296,12 @@ _check_for_required_command() {
 
 
 
+##################################################################
 # Usage:	_abort_on_trailing_slash	Exit_code	Variable_name
 #
 # Takes the name of a variable as an argument and checks its contents for a trailing slash.
-#
+##################################################################
+
 _abort_on_trailing_slash() {
 	local	_TMP
 	local	_VAL
@@ -309,10 +319,12 @@ _abort_on_trailing_slash() {
 
 
 
+##################################################################
 # Usage:	_abort_on_leading_or_trailing_slash	Exit_code	Variable_name
 #
 # Takes the name of a variable as an argument and checks its contents for a trailing slash.
-#
+##################################################################
+
 _abort_on_leading_or_trailing_slash() {
 	local	_TMP
 	local	_VAL
@@ -332,8 +344,10 @@ _abort_on_leading_or_trailing_slash() {
 
 
 
+##################################################################
 # Usage:	_abort_on_directory_not_found	Exit_code	Directory_to_check
-#
+##################################################################
+
 _abort_on_directory_not_found() {
 	if [[ ! -d "${2}" ]]; then
 		_log_fatal_and_exit "${1}" "Cannot find directory: ${2}"
@@ -342,7 +356,10 @@ _abort_on_directory_not_found() {
 
 
 
+##################################################################
 # Trim the leading and trailing spaces and remove any apostrophies ('), carriage returns and line feeds.
+##################################################################
+
 _sanitise_value() {
 	local	_L_RV=$*
 
@@ -418,7 +435,7 @@ _decode_state_line_state() {
 
 
 ##################################################################
-# Decode the volume, repeat mode, random mode, single mode and cosume mode.
+# Decode the volume, repeat mode, random mode, single mode and consume mode.
 ##################################################################
 
 _decode_state_line_volume() {
@@ -450,7 +467,7 @@ _decode_state_line_error() {
 	# If the line is not empty.
 	if [ -n "${1}" ]; then
 
-# ERROR: Failed to decode /var/lib/mpd/music/SDCARD/CD/ACDC/Black Ice/(ACDC) Black Ice - 03) Big Jack.mp3;Failed to open '/var/lib/mpd/music/SDCARD/CD/ACDC/Black Ice/(ACDC) Black Ice - 03) Big Jack.mp3': No such file or directory
+# ERROR: Failed to decode /var/lib/mpd/music/My CDs/Metallica/Master Of Puppets/(Metallica) Master Of Puppets - 01) Battery.mp3;Failed to open '/var/lib/mpd/music/My CDs/Metallica/Master Of Puppets/(Metallica) Master Of Puppets - 01) Battery.mp3': No such file or directory
 
 		while IFS=":;" read -r _L_ERROR _L_MSG1 _L_MSG2 _L_MSG3; do
 			_log_debug "${_L_ERROR}"
@@ -477,7 +494,7 @@ _cleanup_abcde() {
 	for ABCDEDIR in "${TEMP_DIR}"/abcde.*
 	do
 		if [[ -d "${ABCDEDIR}" ]]; then
-			_log_log "Removing temporary '${ABCDEDIR}' directory."
+			_log_log "Removing temporary directory: '${ABCDEDIR}'"
 
 			# Ignore any non-existent files, remove directories and their contents recursively, remove empty directories.
 			${CMD_RM} -f -r -d "${ABCDEDIR}"
@@ -507,7 +524,7 @@ _abcde_exit_error() {
 ##################################################################
 ##################################################################
 #
-# Start of the CD ripping/playing program for 'moOde'.
+# The start of the CD ripping/playing program for 'moOde'.
 #
 ##################################################################
 ##################################################################
@@ -570,7 +587,7 @@ fi
 
 _G_MPD_MUSIC_DIR=""
 
-_log_debug "Looking in '\\etc\\mpd.conf' for the music directory."
+_log_debug "Looking in '/etc/mpd.conf' for the music directory."
 
 # Read the file in row mode and extract each line.
 while IFS= read -r _L_LINE; do
@@ -599,6 +616,7 @@ if [[ ! -d "${_G_MPD_MUSIC_DIR}" ]]; then
 	_log_fatal_and_exit 3 "Cannot find directory: ${_G_MPD_MUSIC_DIR}"
 fi
 
+# Got: /var/lib/mpd/music
 _log_debug "Got: ${_G_MPD_MUSIC_DIR}"
 
 
@@ -622,14 +640,14 @@ _abort_on_leading_or_trailing_slash 9 DEFAULT_SAVED_USER_PLAYLIST_EXTENSION
 # The music sub directory must be empty or have no leading or trailing slashes.
 if [ -z "${MUSIC_SUB_DIR}" ]; then
 	# This is passed to 'abcde'.
-	# '/var/lib/mpd/music/CD' or '/var/lib/mpd/music/SDCARD' or '/var/lib/mpd/music/USB'.
+	# '/var/lib/mpd/music/My CDs' or '/var/lib/mpd/music/SDCARD' or '/var/lib/mpd/music/USB'.
 	readonly	MUSIC_DIR="${_G_MPD_MUSIC_DIR}/${LIBRARY_TAG}"
 else
 	# Not empty.
 	_abort_on_leading_or_trailing_slash 10 MUSIC_SUB_DIR
 
 	# This is passed to 'abcde'.
-	# '/var/lib/mpd/music/CD/${MUSIC_SUB_DIR}' or '/vsr/lib/mpd/music/SDCARD/${MUSIC_SUB_DIR}' or '/var/lib/mpd/music/USB/${MUSIC_SUB_DIR}'.
+	# '/var/lib/mpd/music/My CDs/${MUSIC_SUB_DIR}' or '/vsr/lib/mpd/music/SDCARD/${MUSIC_SUB_DIR}' or '/var/lib/mpd/music/USB/${MUSIC_SUB_DIR}'.
 	readonly	MUSIC_DIR="${_G_MPD_MUSIC_DIR}/${LIBRARY_TAG}/${MUSIC_SUB_DIR}"
 fi
 
@@ -646,7 +664,7 @@ fi
 
 
 # Must not have a trailing slash.
-# /home/pi/Music-CD/.Music CDs Ripped
+# /var/lib/mpd/music/My CDs/.Music CDs Ripped
 _G_DISCID_DIR="${MUSIC_DIR}/.Music CDs Ripped"
 
 # If the disc id directory does not exist, create it.
@@ -662,19 +680,31 @@ if [ ! -d "${_G_DISCID_DIR}" ]; then
 	_log_if_fatal_and_exit "${?}" 12 "Cannot change the owner of '${_G_DISCID_DIR}' to '${RIPPED_MUSIC_OWNER}'. 'chown'"
 fi
 
+# CDs ripped dir: /var/lib/mpd/music/My CDs/.Music CDs Ripped
 _log_debug "CDs ripped dir: ${_G_DISCID_DIR}"
+
+# Mpd music dir:  /var/lib/mpd/music
 _log_debug "Mpd music dir:  ${_G_MPD_MUSIC_DIR}"
+
+# Mount dir:      /mnt/CD
 _log_debug "Mount dir:      /mnt/${MUSIC_MNT_SOURCE}"
+
+#  Music sub dir:
 _log_debug "Music sub dir:  ${MUSIC_SUB_DIR}"
+
+# Music dir:      /var/lib/mpd/music/My CDs
 _log_debug "Music dir:      ${MUSIC_DIR}"
 
-# /var/lib/mpd/music.
+# Temp dir:       /run
+_log_debug "Temp dir:       ${TEMP_DIR}"
+
+# /var/lib/mpd/music
 _abort_on_directory_not_found 13 "${_G_MPD_MUSIC_DIR}"
 
 # /run
 _abort_on_directory_not_found 14 "${TEMP_DIR}"
 
-# /var/lib/mpd/music/SDCARD/CD
+# /var/lib/mpd/music/My CDs
 _abort_on_directory_not_found 15 "${MUSIC_DIR}"
 
 _log_debug "Directories are valid."
@@ -688,6 +718,7 @@ if [[ ! -s "${_ABCDE_CONFIG}" ]]; then
 	_log_fatal_and_exit 16 "Cannot find configuration file: ${_ABCDE_CONFIG}"
 fi
 
+# Using config file: /home/pi/Src/cd-rip/abcde.conf
 _log_debug "Using config file: ${_ABCDE_CONFIG}"
 
 ##################################################################
@@ -733,6 +764,7 @@ if [ -z "${CDROM}" ]; then
 	_log_fatal_and_exit 18 "Cannot find the CDROM drive."
 fi
 
+# Using CDROM drive: /dev/cdrom
 _log_debug "Using CDROM drive: ${CDROM}"
 
 ##################################################################
@@ -751,12 +783,16 @@ _G_CD_ID=$(${CMD_CDDISCID} ${CDROM})
 
 _log_if_fatal_and_exit "${?}" 19 "Cannot get the cd disc id. 'cd-discid'"
 
+# [cd_id] 520cd708 8 183 23625 62268 91980 121008 158255 183755 221803 3289
 _log_debug "[cd_id] ${_G_CD_ID}"
 
 _G_DISC_ID=$(${CMD_ECHO} "${_G_CD_ID}" | cut -d' ' -f1)
 _G_TRACKS=$(${CMD_ECHO} "${_G_CD_ID}" | cut -d' ' -f2)
 
+# [disc_id] 520cd708
 _log_debug "[disc_id] ${_G_DISC_ID}"
+
+# [tracks] 8
 _log_debug "[tracks] ${_G_TRACKS}"
 
 _G_DISC_ID=$( _sanitise_value "${_G_DISC_ID}" )
@@ -769,18 +805,14 @@ _write_to_pipe "Begin"
 
 # Check to see if we have ripped the CD.
 
-# /home/pi/Music-CD/.Music CDs Ripped
+# /var/lib/mpd/music/My CDs/.Music CDs Ripped/520cd708
 _G_CD_DISC_ID="${_G_DISCID_DIR}/${_G_DISC_ID}"
 
-_log_debug "Looking for: ${_G_CD_DISC_ID}-*"
+# Looking for: /var/lib/mpd/music/My CDs/.Music CDs Ripped/520cd708 -*
+_log_debug "Looking for: ${_G_CD_DISC_ID} -*"
 
-# If the tag exists.
-#$(${CMD_LS}  "/home/pi/Music-CD/.Music CDs Ripped/c90d090f"-*)
-
-# Returns 0 if found else 2 if not found.
-#CD=$(${CMD_LS} "${_G_CD_DISC_ID}"-*)
-#${CMD_LS} "${_G_CD_DISC_ID}"-*
-XX=$(${CMD_LS} "${_G_CD_DISC_ID}"-* 2>&1)
+# If the tag exists. Returns 0 if found else 2 if not found.
+${CMD_LS} "${_G_CD_DISC_ID}"\ -* 2>&1
 
 RV=${?}
 
@@ -788,10 +820,10 @@ _log_debug "Log level ${_LOG_LEVEL}"
 _log_debug "${CDROM}"
 _log_debug "${MUSIC_DIR}                      # /var/lib/mpd/music/SDCARD/CD or /var/lib/mpd/music/My CDs"
 _log_debug "${MUSIC_SUB_DIR}                                               # CD"
-_log_debug "${_G_DISCID_DIR}    # /home/pi/Music-CD/.Music CDs Ripped"
+_log_debug "${_G_DISCID_DIR}    # /var/lib/mpd/music/My CDs/.Music CDs Ripped"
 _log_debug "${_LOCKNAME}                                # /var/lock/${_SCRIPTNAME}.lock"
 _log_debug "${TEMP_DIR}                                           # /run"
-_log_debug "${LOGFILE}         # /var/log/${_SCRIPTNAME}.log"
+_log_debug "${LOGFILE}                # /var/log/${_SCRIPTNAME}.log"
 
 # FOR DEBUG...
 #${CMD_EJECT}
@@ -803,7 +835,8 @@ _log_debug "${LOGFILE}         # /var/log/${_SCRIPTNAME}.log"
 if [ 0 -ne "${RV}" ]; then
 	# The disc id has not been found indicating that the CD has not been previously ripped.
 
-	_log_log "Cannot find: ${_G_CD_DISC_ID}-*"
+	# Cannot find: /var/lib/mpd/music/My CDs/.Music CDs Ripped/520cd708 -*
+	_log_log "Cannot find: ${_G_CD_DISC_ID} -*"
 	_log_log ""
 	_log_log "Ripping ${_G_TRACKS} CD tracks. Start time: $(date)"
 	_log_log ""
@@ -828,7 +861,10 @@ if [ 0 -ne "${RV}" ]; then
 		# Ensure that 'abcde' does not fail if it finds a previous unfinished rip.
 		_cleanup_abcde
 
-		export	-f	_write_to_pipe
+		# export	-f	_write_to_pipe
+		export	-f	_log_log
+		export	-f	_log_warn
+		export	-f	_log_debug
 
 		# Allow 'abcde' acess to these variables.
 		# Export needed things so they can be read in this subshell.
@@ -844,9 +880,9 @@ if [ 0 -ne "${RV}" ]; then
 		export	_LOG_LEVEL
 		export	CDROM
 		export	RIPPED_MUSIC_OWNER	# 'pi:pi'
-		export	MUSIC_DIR		# '/var/lib/mpd/music/SDCARD/CD' or '/var/lib/mpd/music/USB/CD'.
+		export	MUSIC_DIR		# '/var/lib/mpd/music/My CDs' or '/var/lib/mpd/music/USB/CD'.
 		export	MUSIC_SUB_DIR		# '' or 'CD'
-		export	_G_DISCID_DIR		# '/home/pi/Music-CD/.Music CDs Ripped'
+		export	_G_DISCID_DIR		# '/var/lib/mpd/music/My CDs/.Music CDs Ripped'
 		export	TEMP_DIR		# '/run'
 		export	LOGFILE			# '/var/log/${_SCRIPTNAME}.log'
 
@@ -884,38 +920,50 @@ if [ 0 -ne "${RV}" ]; then
 
 		# Do the ripping.
 		# Use Unix PIPES to read and encode in one step.
-		# 3:40
+		# Duration: 3:40
 		# { ${_CMD_ABCDE_PATCHED} -P 2-3 >> "${LOGFILE}"; } 2>&1
 
-		# 3:10
+		# Normal read and encode.
+		# Duration: 3:10
 		# { ${_CMD_ABCDE_PATCHED} 2-3 >> "${LOGFILE}"; } 2>&1
 
-		# Use a specific config file.
-#		{ ${_CMD_ABCDE_PATCHED} -c /home/pi/Src/cd-rip/abcde.conf 2-3 >> "${LOGFILE}"; } 2>&1
 
-		{ ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 2-3 >> "${LOGFILE}"; } 2>&1
+
+		# Using a specific config file.
+#		{ ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 2-3 >> "${LOGFILE}"; } 2>&1
+
+		# Use the original 'abcde'.
+#		{ ${CMD_ABCDE} -c "${_ABCDE_CONFIG}" 2 >> "${LOGFILE}"; } 2>&1
+
+###		{ ${_DIRECTORY}/abcde.ORIGINAL -c "${_ABCDE_CONFIG}" 2 >> "${LOGFILE}"; } 2>&1
+		{ ${_DIRECTORY}/abcde.ORIGINAL -c "${_ABCDE_CONFIG}" >> "${LOGFILE}"; } 2>&1
 
 #		{ ${_CMD_ABCDE_PATCHED} >> "${LOGFILE}"; } 2>&1
 
 
 
-#		_G_RESULT=$( { ${_CMD_ABCDE_PATCHED} 2-3 >> "${LOGFILE}"; } 2>&1 )
-
-#		_G_RESULT=$(/home/pi/Src/cd-rip/ttt.sh 2-3)
-
 		# Any error from the 'abcde' ripping will result in an immediate call
 		# to '_abcde_exit_error' here. This will eject the cd and clean up the
 		# 'abcde' temporary directory.
 
+#		_G_RESULT=$( { ${_DIRECTORY}/abcde.ORIGINAL -c "${_ABCDE_CONFIG}" >> "${LOGFILE}"; } 2>&1 )
+#		_G_RESULT=$( { ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 2-3 >> "${LOGFILE}"; } 2>&1 )
+#
 		RV=$?
 
 #		_log_result "${_G_RESULT}"
+
+
 
 		# Remove all our traps.
 		trap	-	EXIT ERR SIGHUP SIGINT SIGQUIT SIGABRT SIGTERM
 
 		# Remove the exports.
-		export	-n	_write_to_pipe
+		# export	-n	_write_to_pipe
+
+		export	-n	_log_log
+		export	-n	_log_warn
+		export	-n	_log_debug
 
 		export	-n	LOG_LEVEL_NOLOG
 		export	-n	LOG_LEVEL_FATAL
@@ -934,8 +982,6 @@ if [ 0 -ne "${RV}" ]; then
 		export	-n	TEMP_DIR
 		export	-n	LOGFILE
 
-_log_log "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-
 		_log_if_fatal_and_exit "${RV}" 21 "Ripping failed. 'abcde'"
 
 	) 200>"${_LOCKNAME}"
@@ -944,8 +990,7 @@ _log_log "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 	RV=${?}
 
 	# If we have a fatal exit code from above.
-	if [ 0 -ne "${RV}" ]; then
-_log_log "ERROR: ${RV}"
+	if [ "0" -ne "${RV}" ]; then
 		_exit_terminate "${RV}"
 	fi
 
@@ -971,16 +1016,6 @@ _log_log "ERROR: ${RV}"
 	_log_result "${_G_RESULT}"
 
 	_write_to_pipe "Ripping-done"
-
-
-
-_log_log "OK: ${RV}"
-_log_log ""
-
-# _exit_terminate 0
-
-
-
 fi	# End of 'if [ 0 -ne "${RV}" ]; then'
 
 
@@ -990,27 +1025,28 @@ fi	# End of 'if [ 0 -ne "${RV}" ]; then'
 # add its list of mp3 files to 'moOde's playlist queue.
 ##################################################################
 
-_log_ok "Looking for '${_G_CD_DISC_ID}-*' again."
+# Looking for '/var/lib/mpd/music/My CDs/.Music CDs Ripped/520cd708 -*' again.
+_log_ok "Looking for '${_G_CD_DISC_ID} -*' again."
 
 # Returns 0 if found else 2 if not found.
-_G_CD=$(${CMD_LS} "${_G_CD_DISC_ID}"-* 2>&1)
+_G_CD=$(${CMD_LS} "${_G_CD_DISC_ID}"\ -* 2>&1)
 
 RV=${?}
 
 # If the result of the '${CMD_LS} "${_G_CD_DISC_ID}"-* is not zero.
 if [ 0 -ne "${RV}" ]; then
-	_log_error "Cannot find '${_G_CD_DISC_ID}-*'"
+	_log_error "Cannot find '${_G_CD_DISC_ID} -*'"
 else
 	##################################################################
 	# Read the current mpd status.
 	#
 	# The return values from mpc status can be any of the following:
 	#
-	#	AC/DC - Skies on Fire
+	#	Metallica - Battery
 	#	[paused]  #1/2   1:54/3:34 (53%)
 	#	[playing] #1/2   0:44/3:34 (20%)
 	#	volume: 10%   repeat: off   random: off   single: off   consume: off
-	#	ERROR: Failed to decode /var/lib/mpd/music/SDCARD/CD/ACDC/Black Ice/(ACDC) Black Ice - 03) Big Jack.mp3;Failed to open '/var/lib/mpd/music/SDCARD/CD/ACDC/Black Ice/(ACDC) Black Ice - 03) Big Jack.mp3': No such file or directory
+	#	ERROR: Failed to decode /var/lib/mpd/music/My CDs/Metallica/Master Of Puppets/(Metallica) Master Of Puppets - 01) Battery.mp3;Failed to open '/var/lib/mpd/music/My CDs/Metallica/Master Of Puppets/(Metallica) Master Of Puppets - 01) Battery.mp3': No such file or directory
 	##################################################################
 
 	_G_MPD_ARTIST=""
@@ -1095,6 +1131,7 @@ else
 
 	# If we have not got the state line or we are not playing any tracks.
 	if [[ "playing" != "${_G_MPD_STATE}" ]]; then
+		# Saving the playlist as: Saved-User-Playlist
 		_log_log "Saving the playlist as: ${DEFAULT_SAVED_USER_PLAYLIST}"
 
 		# Set the volume to 0.
@@ -1124,7 +1161,7 @@ else
 		fi
 	fi
 
-	# LOG:   Found: /home/pi/.Music CD Tags/c90d090f-ACDC-Black Ice
+	# Found: /var/lib/mpd/music/My CDs/.Music CDs Ripped/520cd708 - Metallica - Master Of Puppets
 	_log_log "Found: ${_G_CD}"
 
 	_write_to_pipe "Found ${_G_CD}"
@@ -1147,13 +1184,13 @@ else
 	while IFS= read -r _L_LINE; do
 		# Do something with ${_L_LINE}.
 
-		# AC/DC
-		# Black Ice
-		# 2008
-		# Genre
-		# ##############################
-		# ACDC/Black Ice/(ACDC) Black Ice - 02) Skies on Fire.mp3
-		# ACDC/Black Ice/(ACDC) Black Ice - 03) Big Jack.mp3
+		# Metallica
+		# Master Of Puppets
+		# 1986
+		# Metal
+		# ############################################################
+		#
+		# Metallica/Master Of Puppets/(Metallica) Master Of Puppets - 01) Battery.mp3
 
 		_G_LINE_COUNT=$((1 + _G_LINE_COUNT))
 
@@ -1164,28 +1201,32 @@ else
 			if [ 0 -eq ${_G_FOUND_MARKER} ]; then
 				#		    123456789012345678901234567890
 				if [[ "${_L_LINE}" == "##############################"* ]]; then
+					# Found marker on line 5
 					_log_debug "Found marker on line ${_G_LINE_COUNT}"
 
-### WHY WHY WHY
-					${CMD_EJECT}
+					${CMD_EJECT}	### WHY WHY WHY cos abcde should have ejected the cd
 
 					_G_FOUND_MARKER=1
 				else
 					case ${_G_LINE_COUNT} in
 						1)	# Optional artist.
+							# Got artist: Metallica
 							_log_debug "Got artist: ${_L_LINE}"
 							_write_to_pipe "Artist ${_L_LINE}"
 
 						;;
 						2)	# Optional album.
+							# Got album: Master Of Puppets
 							_log_debug "Got album: ${_L_LINE}"
 							_write_to_pipe "Album ${_L_LINE}"
 						;;
 						3)	# Optional year.
+							# Got year: 1986
 							_log_debug "Got year: ${_L_LINE}"
 							_write_to_pipe "Year ${_L_LINE}"
 						;;
 						4)	# Optional genre.
+							# Got genre: Metal
 							_log_debug "Got genre: ${_L_LINE}"
 							_write_to_pipe "Genre ${_L_LINE}"
 						;;
@@ -1198,8 +1239,9 @@ else
 				# Found a track to add.
 
 				# file:///Music/Files/Scorpions - The Zoo.mp3
-				# ACDC/Black Ice/(ACDC) Black Ice - 03) Big Jack.mp3
+				# Metallica/Master Of Puppets/(Metallica) Master Of Puppets - 01) Battery.mp3
 
+				# Adding track: Metallica/Master Of Puppets/(Metallica) Master Of Puppets - 01) Battery.mp3
 				_log_debug "Adding track: ${_L_LINE}"
 
 				if [ -z "$MUSIC_SUB_DIR" ]; then
@@ -1215,6 +1257,7 @@ else
 				if [ 0 -eq "${RV}" ]; then
 					_G_ADDED=1
 
+					# adding: My CDs/Metallica/Master Of Puppets/(Metallica) Master Of Puppets - 01) Battery.mp3
 					_log_ok "${MSG}"
 					_write_to_pipe "Track-added ${_L_LINE}"
 
@@ -1230,6 +1273,7 @@ else
 	# Decide if we need to change the volume or restore the playlist.
 	##################################################################
 
+	# Mpd state:
 	_log_debug "Mpd state: ${_G_MPD_STATE}"
 
 	# If already playing a track there is no need to start playing and leave the volume alone.
@@ -1257,6 +1301,12 @@ else
 			# Start playing from track 1.
 			RESULT=$(${CMD_MPC} play 2>&1)
 
+			# We are not playing a track.
+			# Current volume is: 0%
+			# Tracks have been added. Changing the volume from 0 to 10
+			# Metallica - Battery
+			# [playing] #1/8   0:00/8:35 (0%)
+			# volume: 10%   repeat: off   random: off   single: off   consume: off
 			_log_result "${RESULT}"
 			_write_to_pipe "Mpd-play"
 		else
@@ -1288,4 +1338,5 @@ fi			# End of 'if [ 0 -ne "${RV}" ]; then'
 # Yay! We have success.
 ##################################################################
 
+# All done. Exiting...(0)
 _exit_terminate 0
