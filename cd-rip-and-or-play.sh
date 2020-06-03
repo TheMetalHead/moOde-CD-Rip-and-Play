@@ -51,7 +51,7 @@ readonly	_ABCDE_CONFIG="${_DIRECTORY}/abcde.conf"
 readonly	_CDRIP_CONFIG="${_DIRECTORY}/${_SCRIPTNAME}.conf"
 
 # /home/pi/Src/cd-rip/abcde
-readonly	_CMD_ABCDE_PATCHED="${_DIRECTORY}/abcde"
+readonly	_CMD_ABCDE_PATCHED="${_DIRECTORY}/abcde-patched"
 
 
 
@@ -113,6 +113,8 @@ _exit_terminate() {
 #	"Begin"
 #	"Ripping-start ${_G_TRACKS}"
 #	"Ripping-done"
+#	"Inserted-cd"
+#	"Ejected-cd"
 #	"Found ${_G_CD}"
 #	"Mpd-play"
 #	"Mpd-already-playing"
@@ -178,6 +180,14 @@ _log_error() {
 
 
 
+_eject_cd() {
+	${CMD_EJECT}
+
+	_write_to_pipe "Ejected-cd"
+}
+
+
+
 # This always gets outputs to the log file and exits.
 # It outputs the function name, line number and message.
 #
@@ -193,7 +203,7 @@ _log_fatal_and_exit() {
 	# Displays the calling function name and the line number of the fatal test along with the exit code.
 	${CMD_ECHO} "[FATAL]   ${FUNCNAME[1]} : Line ${BASH_LINENO[0]} : Exit ${_L_EXIT_CODE} - ${*}" >> "${LOGFILE}"
 
-	${CMD_EJECT}
+	_eject_cd
 
 	_write_to_pipe "Error ${_L_EXIT_CODE} - ${*}"
 
@@ -221,7 +231,7 @@ _log_if_fatal_and_exit() {
 		# Displays the calling function name and the line number of the fatal test along with the exit code and the commands error code.
 		${CMD_ECHO} "[FATAL]   ${FUNCNAME[1]} : Line ${BASH_LINENO[0]} : Exit ${_L_EXIT_CODE} - ${*} returned error code: ${_L_LAST_RESULT}" >> "${LOGFILE}"
 
-		${CMD_EJECT}
+		_eject_cd
 
 		_write_to_pipe "Error ${_L_EXIT_CODE} - ${*}"
 
@@ -507,7 +517,7 @@ _cleanup_abcde() {
 _abcde_exit_error() {
 	_log_debug "'abcde' returned error code: ${?}"
 
-	${CMD_EJECT}
+	_eject_cd
 
 	_cleanup_abcde
 }
@@ -774,6 +784,8 @@ _log_debug "Using CDROM drive: ${CDROM}"
 # Set the speed and close the tray.
 ${CMD_EJECT} -x 8 ${CDROM}
 
+_write_to_pipe "Inserted-cd"
+
 
 
 # Get the disk id.
@@ -826,7 +838,7 @@ _log_debug "${TEMP_DIR}                                           # /run"
 _log_debug "${LOGFILE}                # /var/log/${_SCRIPTNAME}.log"
 
 # FOR DEBUG...
-#${CMD_EJECT}
+#_eject_cd
 #exit 0
 
 
@@ -918,37 +930,37 @@ if [ 0 -ne "${RV}" ]; then
 
 
 
-		# Do the ripping.
+		# Uses a specific config file.
+
+		# TEST: Do the ripping.
 		# Use Unix PIPES to read and encode in one step.
 		# Duration: 3:40
-		# { ${_CMD_ABCDE_PATCHED} -P 2-3 >> "${LOGFILE}"; } 2>&1
+		# { ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" -P 2-3 >> "${LOGFILE}"; } 2>&1
 
-		# Normal read and encode.
+		# TEST: Normal read and encode.
 		# Duration: 3:10
-		# { ${_CMD_ABCDE_PATCHED} 2-3 >> "${LOGFILE}"; } 2>&1
+		# { ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 2-3 >> "${LOGFILE}"; } 2>&1
 
 
 
-		# Using a specific config file.
-#		{ ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 2-3 >> "${LOGFILE}"; } 2>&1
-
-		# Use the original 'abcde'.
+#		# TEST: Use the original 'abcde'.
 #		{ ${CMD_ABCDE} -c "${_ABCDE_CONFIG}" 2 >> "${LOGFILE}"; } 2>&1
 
-###		{ ${_DIRECTORY}/abcde.ORIGINAL -c "${_ABCDE_CONFIG}" 2 >> "${LOGFILE}"; } 2>&1
-		{ ${_DIRECTORY}/abcde.ORIGINAL -c "${_ABCDE_CONFIG}" >> "${LOGFILE}"; } 2>&1
-
-#		{ ${_CMD_ABCDE_PATCHED} >> "${LOGFILE}"; } 2>&1
+#		# TEST: Use the patched 'abcde-patched'.
+#		{ ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 2 >> "${LOGFILE}"; } 2>&1
 
 
 
-		# Any error from the 'abcde' ripping will result in an immediate call
-		# to '_abcde_exit_error' here. This will eject the cd and clean up the
-		# 'abcde' temporary directory.
+		{ ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" >> "${LOGFILE}"; } 2>&1
 
-#		_G_RESULT=$( { ${_DIRECTORY}/abcde.ORIGINAL -c "${_ABCDE_CONFIG}" >> "${LOGFILE}"; } 2>&1 )
+
+
+		# Any error from the 'abcde' ripping software will result in an immediate
+		# call to '_abcde_exit_error' here. This will eject the cd and clean up
+		# the 'abcde' temporary directory.
+
 #		_G_RESULT=$( { ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 2-3 >> "${LOGFILE}"; } 2>&1 )
-#
+
 		RV=$?
 
 #		_log_result "${_G_RESULT}"
@@ -1004,7 +1016,7 @@ if [ 0 -ne "${RV}" ]; then
 		_log_warn "Cannot truncate '${MOODE_LIB_CACHE_FILE}'"
 	fi
 
-	${CMD_EJECT}
+	_eject_cd
 
 	_log_log ""
 	_log_log "CD ripped ok. End time: $(date)"
@@ -1204,7 +1216,7 @@ else
 					# Found marker on line 5
 					_log_debug "Found marker on line ${_G_LINE_COUNT}"
 
-					${CMD_EJECT}	### WHY WHY WHY cos abcde should have ejected the cd
+					_eject_cd	### WHY WHY WHY cos abcde should have ejected the cd
 
 					_G_FOUND_MARKER=1
 				else

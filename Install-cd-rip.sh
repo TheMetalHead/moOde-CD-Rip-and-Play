@@ -28,9 +28,7 @@ readonly	FULLPATHNAME=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null||echo "$0")
 # /home/pi/Src/cd-rip
 readonly	DIRECTORY=$(dirname "${FULLPATHNAME}")
 
-# Returns the config pathname.
-# /home/pi/Src/cd-rip/cd-rip-and-or-play
-readonly	CDRIP_CONFIG="${DIRECTORY}/cd-rip-and-or-play.conf"
+readonly	CDRIP_CONFIG="cd-rip-and-or-play.conf"
 
 readonly	UDEV_RULE="99-srX.rules"
 
@@ -38,7 +36,22 @@ readonly	SYSTEMD_EJECT_SERVICE="cd-rip-eject.service"
 
 readonly	SYSTEMD_RIP_SERVICE="cd-rip-and-or-play.service"
 
+# This is for patching 'abcde'. It overcomes a small bug when
+# using Musicbrainz as it does not return the genre.
+readonly	VERSION_TO_PATCH="2.9.3"
 
+readonly	ABCDE_PATCHED="abcde-patched"
+
+readonly	PATCH_LOCATION="ENCODELOCATIONS=\$(echo \$ENCODELOCATIONS)"
+
+readonly	PATCH_START_MARKER="# PATCH - PATCH - PATCH - PATCH - PATCH"
+readonly	PATCH_END_MARKER="# END PATCH - END PATCH - END PATCH - END PATCH - END PATCH"
+
+
+
+##################################################################
+# Colour constants.
+##################################################################
 
 # Reset
 Colour_Off='\033[0m'      # Text Reset
@@ -116,10 +129,10 @@ On_IWhite='\033[0;107m'   # White
 
 
 ##################################################################
-# Import the cd-rip-and-play configuration file.
+# Import the 'cd-rip-and-play' configuration file.
 ##################################################################
 
-source	"${CDRIP_CONFIG}" || { echo "ERROR: in configuration file '${CDRIP_CONFIG}'"; exit 1; }
+source	"${DIRECTORY}/${CDRIP_CONFIG}" || { echo "ERROR: in configuration file '${DIRECTORY}/${CDRIP_CONFIG}'"; exit 1; }
 
 
 
@@ -156,6 +169,8 @@ _display_ok() {
 
 
 
+# Usage:	_exit_error	Exit_Code	Message_To_display
+#
 _exit_error() {
 	local	_EXIT_CODE
 
@@ -188,7 +203,6 @@ _check_command_and_exit_if_error() {
 		shift
 		shift
 
-#		echo "[FATAL]   ${FUNCNAME[1]} : Line ${BASH_LINENO[0]} : Exit ${_EXIT_CODE} - Command returned error code: ${_LAST_RESULT} - ${*}"
 		echo -e "${BWhite}${On_Red}[ FATAL ]   ${FUNCNAME[1]} : Line ${BASH_LINENO[0]} : Exit ${_EXIT_CODE} - Command returned error code: ${_LAST_RESULT} - ${*}${Colour_Off}"
 
 		exit "${_EXIT_CODE}"
@@ -308,11 +322,11 @@ fi
 HILITE="${BCyan}"
 
 echo ""
-echo -e "Install the cd ripper software for use with ${HILITE}moOde${Colour_Off}."
+echo -e "Install the cd ripper software for use with ${HILITE}'moOde'${Colour_Off}."
 
 if [ ! -f "/var/www/command/moode.php" ]; then
 	echo ""
-	echo -e "${BYellow}This is not a moOde installation.${Colour_Off}"
+	echo -e "${BYellow}This is not a 'moOde' installation.${Colour_Off}"
 	echo ""
 	echo -e "${BYellow}Aborted...${Colour_Off}"
 
@@ -371,7 +385,7 @@ fi
 if [[ "${*}" ]]; then
 	echo "args -> ${*}"
 
-	_check_command_and_exit_if_error 1 8 "Arguments are not required: ${*}"
+	_exit_error 8 "Arguments are not required: ${*}"
 fi
 
 if [[ -z "${CDROM}" ]]; then
@@ -379,24 +393,24 @@ if [[ -z "${CDROM}" ]]; then
 fi
 
 echo ""
-echo -e "Reading the configuration file: ${HILITE}${CDRIP_CONFIG}${Colour_Off}"
+echo -e "Reading the configuration file: ${HILITE}${DIRECTORY}/${CDRIP_CONFIG}${Colour_Off}"
 echo ""
-echo -e "Found CDROM drive:     ${HILITE}${CDROM}${Colour_Off}"
+echo -e "Found CDROM drive:       ${HILITE}${CDROM}${Colour_Off}"
 echo ""
-echo -e "Music home path:       ${HILITE}${MUSIC_HOME_PATH}${Colour_Off}"		# Do not add any trailing slashes. Full path
-echo -e "Ripped music dir:      ${HILITE}${RIPPED_MUSIC_DIR}${Colour_Off}"		# Do not add any leading/trailing slashes
-echo -e "Ripped music sub dir:  ${HILITE}${MUSIC_SUB_DIR}${Colour_Off}"
+echo -e "Music home path:         ${HILITE}${MUSIC_HOME_PATH}${Colour_Off}"		# Do not add any trailing slashes. Full path
+echo -e "Ripped music dir:        ${HILITE}${RIPPED_MUSIC_DIR}${Colour_Off}"		# Do not add any leading/trailing slashes
+echo -e "Ripped music sub dir:    ${HILITE}${MUSIC_SUB_DIR}${Colour_Off}"
 echo ""
-echo -e "Owner:                 ${HILITE}${RIPPED_MUSIC_OWNER}${Colour_Off}"		# WARNING: The owner existance is not checked
-echo -e "Saved playlist name:   ${HILITE}${DEFAULT_SAVED_USER_PLAYLIST}${DEFAULT_SAVED_USER_PLAYLIST_EXTENSION}${Colour_Off}"
-echo -e "Default volume:        ${HILITE}${DEFAULT_VOLUME}${Colour_Off}"		# Default 'moOde' volume
-echo -e "Library name in moOde: ${HILITE}${LIBRARY_TAG}${Colour_Off}"
+echo -e "Owner:                   ${HILITE}${RIPPED_MUSIC_OWNER}${Colour_Off}"		# WARNING: The owner existance is not checked
+echo -e "Saved playlist name:     ${HILITE}${DEFAULT_SAVED_USER_PLAYLIST}${DEFAULT_SAVED_USER_PLAYLIST_EXTENSION}${Colour_Off}"
+echo -e "Default volume:          ${HILITE}${DEFAULT_VOLUME}${Colour_Off}"		# Default 'moOde' volume
+echo -e "Library name in 'moOde': ${HILITE}${LIBRARY_TAG}${Colour_Off}"
 echo ""
-echo -e "Music storage path:    ${HILITE}${MUSIC_HOME_PATH}/${RIPPED_MUSIC_DIR}/${MUSIC_SUB_DIR}${Colour_Off}"
+echo -e "Music storage path:      ${HILITE}${MUSIC_HOME_PATH}/${RIPPED_MUSIC_DIR}/${MUSIC_SUB_DIR}${Colour_Off}"
 
 # Do not add any leading/trailing slashes for the music source.
 echo ""
-echo -e "Will appear in the 'moOde Library Folder' panel as: ${HILITE}${LIBRARY_TAG}${Colour_Off}"
+echo -e "This will appear in the 'moOde Library Folder' panel as: ${HILITE}${LIBRARY_TAG}${Colour_Off}"
 echo ""
 
 
@@ -435,22 +449,30 @@ echo "--------------------------------------------------------------------------
 
 
 ##################################################################
-# Check that all our files for the cd ripping exist.
+# Check that all our files for the cd ripping exist and set the owners and file mode.
 ##################################################################
 
 echo ""
-echo "Checking for our files."
+echo "Checking our files exist and set the owners and file mode."
 
-# for FILE_TO_CHECK in 99-srX.rules cd-rip-eject.service cd-rip-and-or-play.service abcde abcde.conf \
-#			cd-rip-and-or-play.sh cd-rip-and-or-play.conf cd-rip-eject.sh Install-cd-rip.sh
-
-for FILE_TO_CHECK in "${UDEV_RULE}" "${SYSTEMD_EJECT_SERVICE}" "${SYSTEMD_RIP_SERVICE}" "abcde" "abcde.conf" \
-			"cd-rip-and-or-play.sh" "cd-rip-and-or-play.conf" "cd-rip-eject.sh" "Install-cd-rip.sh"
+for FILE_TO_CHECK in "${UDEV_RULE}",444 "${SYSTEMD_EJECT_SERVICE}",444 "${SYSTEMD_RIP_SERVICE}",444 "abcde.conf",644 \
+			"cd-rip-and-or-play.sh",544 "${CDRIP_CONFIG}",644 "cd-rip-eject.sh",544 "Install-cd-rip.sh",544
 do
+	_FILE=${FILE_TO_CHECK%,*}
+	_MOD=${FILE_TO_CHECK#*,}
+
 	# If the file does not exist.
-	if [ ! -e "${FILE_TO_CHECK}" ]; then
-		_check_command_and_exit_if_error 1 11 "CD ripper installation file '${DIRECTORY}/${FILE_TO_CHECK}' does not exist."
+	if [ ! -e "${_FILE}" ]; then
+		_exit_error 11 "CD ripper installation file '${DIRECTORY}/${_FILE}' does not exist."
 	fi
+
+	chown "${RIPPED_MUSIC_OWNER}" "${_FILE}"
+
+	_check_command_and_exit_if_error "${?}" 12 "Cannot change owner of file: ${_FILE} to: ${RIPPED_MUSIC_OWNER}"
+
+	chmod "${_MOD}" "${_FILE}"
+
+	_check_command_and_exit_if_error "${?}" 13 "Cannot change file mode of: ${_FILE} to: ${_MOD}"
 done
 
 _display_ok
@@ -465,7 +487,7 @@ echo "Checking for: /mnt"
 
 # If the mount directory does not exist.
 if [[ ! -d "/mnt" ]]; then
-	_check_command_and_exit_if_error 1 12 "Cannot find directory: /mnt"
+	_exit_error 14 "Cannot find directory: /mnt"
 fi
 
 _display_ok
@@ -480,7 +502,7 @@ echo "Checking for the required programs."
 
 MISSING_PROGRAMS=()
 
-for CMD in "cd-discid" "eject" "flock" "touch" "truncate" "mpc" "mpd" "cdparanoia" "lame" "glyrc" "eyeD3"
+for CMD in "abcde" "cd-discid" "eject" "flock" "touch" "truncate" "mpc" "mpd" "cdparanoia" "lame" "glyrc" "eyeD3"
 do
 	# Check if the command exists and is executable.
 	CMD_TO_CHECK=$(command -v "${CMD}")
@@ -493,18 +515,148 @@ done
 
 if [[ -n "${MISSING_PROGRAMS[*]}" ]]; then
 	echo "The following programs need to be installed: ${MISSING_PROGRAMS[*]}"
-
 	echo "Updating the package repository."
 
 	apt update
 
-	_check_command_and_exit_if_error "${?}" 13 "Installation of missing programs failed."
+	_check_command_and_exit_if_error "${?}" 15 "Installation of missing programs failed."
 
 	echo "Installing the missing programs."
 
 	apt install "${MISSING_PROGRAMS[@]}"
 
-	_check_command_and_exit_if_error "${?}" 14 "Installation of missing programs failed."
+	_check_command_and_exit_if_error "${?}" 16 "Installation of missing programs failed."
+fi
+
+_display_ok
+
+
+
+##################################################################
+# Create a patched version of 'abcde' if required.
+# This allows us to use Musicbrainz and cddb together and allows
+# the ripper to fill in any missing year and or genre details.
+# Musicbrainz does not return the genre but cddb does.
+# Musicbrainz has the better album name for my needs.
+##################################################################
+
+echo "'Musicbrainz' currently does not return the genre but 'cddb' does."
+echo "Because of this, tagging will fail. Also 'Musicbrainz' has the"
+echo "better album name for my needs."
+echo ""
+echo "To use 'Musicbrainz' and 'cddb' together and allow the cd ripper"
+echo "to fill in any missing year and or genre details we need to create"
+echo "a patched version of 'abcde'."
+echo ""
+
+# For some reason '_get_yes_no()' changes the working directory.
+# In fact, any function call will changes the working directory.
+# WHY? WHY? WHY? WHY? WHY?
+#
+# This is a hack...
+pushd "." > /dev/null				# Save the current directory on the stack and change to "."
+
+# Returns 1 if YES else 0 if NO.
+_get_yes_no "Create a patched version of 'abcde'"
+
+RV="${?}"
+
+# This is a hack...
+popd > /dev/null				# Restore the save directory from the stack.
+
+if [[ 1 -eq "${RV}" ]]; then
+	# Do the patching.
+
+	# Check if the command exists and is executable.
+	# Returns: /usr/bin/abcde
+	ABCDEMASTER=$(command -v abcde)
+
+	# If the command is not found, add it to the missing list to install later on.
+	if [ -z "${ABCDEMASTER}" ]; then
+		_exit_error 17 "Cannot find 'abcde'"
+	fi
+
+	# Make a local copy and rename it.
+	cp -p -T --remove-destination "${ABCDEMASTER}" "${ABCDE_PATCHED}"
+
+	if [ ! -s "${ABCDE_PATCHED}" ]; then
+		_exit_error 18 "Cannot copy '${ABCDEMASTER}' to '${ABCDE_PATCHED}'"
+	fi
+
+	# Check the version.
+	# Returns VERSION='2.9.3'
+	VERSION=$(grep "VERSION='" "${ABCDE_PATCHED}")
+
+	# Retain the part after the last "=".
+	# Returns '2.9.3'
+	VERSION="${VERSION##*=}"
+
+	# Remove the first "'".
+	VERSION=${VERSION#"'"}
+
+	# Remove the last "'" to return 2.9.3
+	VERSION=${VERSION%"'"}
+
+	if [[ "${VERSION_TO_PATCH}" != "${VERSION}" ]]; then
+		rm "${ABCDE_PATCHED}"
+
+		_exit_error 19 "Cannot patch version ${VERSION} of '${ABCDE_PATCHED}'"
+	fi
+
+	echo "Found version: ${VERSION}"
+
+	# Has it already been patched?
+	IS_PATCHED=$(grep "${PATCH_END_MARKER}" "${ABCDE_PATCHED}")
+
+	if [[ "${IS_PATCHED}" == "${PATCH_END_MARKER}" ]]; then
+		echo -e "${HILITE}Already patched '${ABCDE_PATCHED}'${Colour_Off}."
+	else
+		# Insert after.
+		sed -i "s/#!\/bin\/bash/&\n#\n# Patched version for use with 'moOde' audio player (http:\/\/moodeaudio.org\/)/" "${ABCDE_PATCHED}"
+		sed -i "s/moodeaudio.org\/)/&\n# created by the 'TheMetalHead' (https:\/\/github.com\/TheMetalHead\/moOde-CD-Rip-and-Play)/" "${ABCDE_PATCHED}"
+		sed -i "s/moOde-CD-Rip-and-Play)/&\n# Look for the patch marker: ${PATCH_START_MARKER}\n#/" "${ABCDE_PATCHED}"
+
+# Cannot do this.
+#		sed '/^${PATCH_LOCATION}$/r'<(
+
+		sed '/^ENCODELOCATIONS=\$(echo \$ENCODELOCATIONS)$/r'<(
+			echo ""
+			echo "${PATCH_START_MARKER}"
+			echo ""
+			echo "export	CDGENRE"
+			echo "export	CDYEAR"
+			echo ""
+			echo "# Call the function in 'abcde.conf'."
+			echo "get_genre_and_year"
+			echo ""
+#			echo "# Only for debug. Uncomment as required."
+#			echo "#vecho "" >&2"
+#			echo "#vecho "Albumfile  : $ALBUMFILE" >&2			# Empty"
+#			echo "#vecho "Artistfile : $ARTISTFILE" >&2		# Empty"
+#			echo "#vecho "Dartist    : $DARTIST" >&2"
+#			echo "#vecho "Trackartist: $TRACKARTIST" >&2		# Empty"
+#			echo "#vecho "Trackname  : $TRACKNAME" >&2			# Empty"
+#			echo "#vecho "Genre      : $GENRE" >&2"
+#			echo "#vecho "Cdgenre    : $CDGENRE" >&2"
+#			echo "#vecho "Cdyear     : $CDYEAR" >&2"
+#			echo "#vecho "Cover dir  : $FINALDIR" >&2			# Empty"
+#			echo "#vecho "Cover file : $ALBUMARTFILE" >&2"
+#			echo "#vecho "" >&2"
+#			echo ""
+			echo "${PATCH_END_MARKER}"
+			echo ""
+		) -i -- "${ABCDE_PATCHED}"
+
+		IS_PATCHED=$(grep "${PATCH_END_MARKER}" "${ABCDE_PATCHED}")
+
+		if [[ "${IS_PATCHED}" != "${PATCH_END_MARKER}" ]]; then
+			rm "${ABCDE_PATCHED}"
+
+			_exit_error 20 "Cannot patch '${ABCDE_PATCHED}'"
+		fi
+
+		echo "Created the patched version: '${ABCDE_PATCHED}'"
+	fi
 fi
 
 _display_ok
@@ -515,7 +667,7 @@ _display_ok
 # Read '/etc/mpd.conf' and look at what 'music_directory' points to.
 ##################################################################
 
-echo "Looking in '\\etc\\mpd.conf' for the music directory."
+echo "Looking in '/etc/mpd.conf' for the music directory."
 
 MPD_MUSIC_DIR=""
 
@@ -540,12 +692,12 @@ while IFS= read -r LINE; do
 done < "/etc/mpd.conf"
 
 if [[ -z "${MPD_MUSIC_DIR}" ]]; then
-	_check_command_and_exit_if_error 1 15 "Cannot find 'music_directory' entry in '/etc/mpd.conf'"
+	_exit_error 21 "Cannot find 'music_directory' entry in '/etc/mpd.conf'"
 fi
 
 # If the directory does not exist.
 if [[ ! -d "${MPD_MUSIC_DIR}" ]]; then
-	_check_command_and_exit_if_error 1 16 "Cannot find directory: ${MPD_MUSIC_DIR}"
+	_exit_error 22 "Cannot find directory: ${MPD_MUSIC_DIR}"
 fi
 
 _display_ok
@@ -567,15 +719,15 @@ if [[ ! -d "${MY_MUSIC_CD_DIR}" ]]; then
 
 	mkdir "${MY_MUSIC_CD_DIR}"
 
-	_check_command_and_exit_if_error "${?}" 17 "Cannot make directory: ${MY_MUSIC_CD_DIR}"
+	_check_command_and_exit_if_error "${?}" 23 "Cannot make directory: ${MY_MUSIC_CD_DIR}"
 
 	chown "${RIPPED_MUSIC_OWNER}" "${MY_MUSIC_CD_DIR}"
 
-	_check_command_and_exit_if_error "${?}" 18 "Cannot change owner for: ${MY_MUSIC_CD_DIR}"
+	_check_command_and_exit_if_error "${?}" 24 "Cannot change owner for: ${MY_MUSIC_CD_DIR}"
 
 	# If the directory still does not exist.
 	if [[ ! -d "${MY_MUSIC_CD_DIR}" ]]; then
-		_check_command_and_exit_if_error 1 19 "Cannot find directory: ${MY_MUSIC_CD_DIR}"
+		_exit_error 25 "Cannot find directory: ${MY_MUSIC_CD_DIR}"
 	fi
 fi
 
@@ -601,15 +753,15 @@ if [[ -n "${MUSIC_SUB_DIR}" ]]; then
 
 		mkdir "${SUB_DIR}"
 
-		_check_command_and_exit_if_error "${?}" 20 "Cannot make directory: ${MUSIC_SUB_DIR}"
+		_check_command_and_exit_if_error "${?}" 26 "Cannot make directory: ${MUSIC_SUB_DIR}"
 
 		chown "${RIPPED_MUSIC_OWNER}" "${SUB_DIR}"
 
-		_check_command_and_exit_if_error "${?}" 21 "Cannot change owner for: ${MUSIC_SUB_DIR}"
+		_check_command_and_exit_if_error "${?}" 27 "Cannot change owner for: ${MUSIC_SUB_DIR}"
 
 		# If the directory still does not exist.
 		if [[ ! -d "${SUB_DIR}" ]]; then
-			_check_command_and_exit_if_error 1 22 "Cannot find directory: ${SUB_DIR}"
+			_exit_error 28 "Cannot find directory: ${SUB_DIR}"
 		fi
 	fi
 
@@ -635,27 +787,29 @@ if [ ! -d "${DISCID_DIR}" ]; then
 
 	mkdir "${DISCID_DIR}"
 
-	_check_command_and_exit_if_error "${?}" 23 "Cannot make directory: ${DISCID_DIR}"
+	_check_command_and_exit_if_error "${?}" 29 "Cannot make directory: ${DISCID_DIR}"
 
 	chown "${RIPPED_MUSIC_OWNER}" "${DISCID_DIR}"
 
-	_check_command_and_exit_if_error "${?}" 24 "Cannot change owner for: ${DISCID_DIR}"
+	_check_command_and_exit_if_error "${?}" 30 "Cannot change owner for: ${DISCID_DIR}"
 
 	# If the directory still does not exist.
 	if [[ ! -d "${DISCID_DIR}" ]]; then
-		_check_command_and_exit_if_error 1 25 "Cannot find directory: ${DISCID_DIR}"
+		_exit_error 31 "Cannot find directory: ${DISCID_DIR}"
 	fi
 
 	README_FILE="${DISCID_DIR}/README.txt"
 
-	echo "This directory contains the list of ripped CDs.
-Do not delete it otherwise the CD will be ripped again." > "${README_FILE}"
+	echo "This directory contains the list of ripped CDs." > "${README_FILE}"
+	echo "Do not delete it otherwise the CD will be ripped again the next time it is inserted." >> "${README_FILE}"
 
 	chown "${RIPPED_MUSIC_OWNER}" "${README_FILE}"
 
+	_check_command_and_exit_if_error "${?}" 32 "Cannot change owner for: ${README_FILE}"
+
 	# If the file does not exist or is empty.
 	if [[ ! -s "${README_FILE}" ]]; then
-		_check_command_and_exit_if_error 1 26 "Cannot create the readme file: ${README_FILE}"
+		_exit_error 33 "Cannot create the readme file: ${README_FILE}"
 	fi
 fi
 
@@ -672,7 +826,7 @@ echo "Changing directory to: /mnt"
 # cd "/mnt"
 _cd_func "/mnt"
 
-_check_command_and_exit_if_error "${?}" 27 "Cannot change directory to: /mnt"
+_check_command_and_exit_if_error "${?}" 34 "Cannot change directory to: /mnt"
 
 # /mnt/CD
 MNT_CD="/mnt/${MUSIC_MNT_SOURCE}"
@@ -683,6 +837,7 @@ echo "Checking for link: ${MNT_CD} to ${MY_MUSIC_CD_DIR}"
 # -h FILE: True if file is a symbolic link.
 
 if [[ -d "${MNT_CD}" || -h "${MNT_CD}" ]]; then
+	# Do nothing.
 	:
 else
 	# CD /home/pi/Music-CD
@@ -692,11 +847,11 @@ else
 	# ln -s -T "/home/pi/Music-CD" "CD"
 	ln -s -T "${MY_MUSIC_CD_DIR}" "${MUSIC_MNT_SOURCE}"
 
-	_check_command_and_exit_if_error "${?}" 28 "Cannot create link to: ${MY_MUSIC_CD_DIR}"
+	_check_command_and_exit_if_error "${?}" 35 "Cannot create link to: ${MY_MUSIC_CD_DIR}"
 
 	# If the directory still does not exist.
 	if [[ ! -d "${MNT_CD}" ]]; then
-		_check_command_and_exit_if_error 1 29 "Cannot find target: ${MNT_CD}"
+		_exit_error 36 "Cannot find target: ${MNT_CD}"
 	fi
 fi
 
@@ -714,7 +869,7 @@ echo "Changing directory to: ${MPD_MUSIC_DIR}"
 # cd "${MPD_MUSIC_DIR}"
 _cd_func "${MPD_MUSIC_DIR}"
 
-_check_command_and_exit_if_error "${?}" 30 "Cannot change directory to: ${MPD_MUSIC_DIR}"
+_check_command_and_exit_if_error "${?}" 37 "Cannot change directory to: ${MPD_MUSIC_DIR}"
 
 echo "Checking for link: ${LIBRARY_TAG} to: ${MNT_CD}"
 
@@ -728,7 +883,7 @@ if [[ ! -L "${LIBRARY_TAG}" ]]; then
 
 	ln -s "${MNT_CD}" "${LIBRARY_TAG}"
 
-	_check_command_and_exit_if_error "${?}" 31 "Cannot create link to: ${MNT_CD}"
+	_check_command_and_exit_if_error "${?}" 38 "Cannot create link to: ${MNT_CD}"
 fi
 
 _display_ok
@@ -748,7 +903,7 @@ echo "Checking for: ${RIPPING_DIR}"
 
 # /var/lib/mpd/music/CD
 if [[ ! -d "${RIPPING_DIR}" ]]; then
-	_check_command_and_exit_if_error 1 32 "Cannot find directory: ${RIPPING_DIR}"
+	_exit_error 39 "Cannot find directory: ${RIPPING_DIR}"
 fi
 
 _display_ok
@@ -764,7 +919,7 @@ echo "Checking for installed udev file."
 # cd "/etc/udev/rules.d"
 _cd_func "/etc/udev/rules.d"
 
-_check_command_and_exit_if_error "${?}" 33 "Cannot change directory to: /etc/udev/rules.d"
+_check_command_and_exit_if_error "${?}" 40 "Cannot change directory to: /etc/udev/rules.d"
 
 # If the file exists and is a symbolic link.
 if [[ -L "${UDEV_RULE}" ]]; then
@@ -775,7 +930,7 @@ else
 
 	ln -s "${DIRECTORY}/${UDEV_RULE}" "."
 
-	_check_command_and_exit_if_error "${?}" 34 "Cannot create udev rule link to: ${DIRECTORY}/${UDEV_RULE}"
+	_check_command_and_exit_if_error "${?}" 41 "Cannot create udev rule link to: ${DIRECTORY}/${UDEV_RULE}"
 fi
 
 _display_ok
@@ -785,7 +940,7 @@ echo "Checking for installed systemd files."
 # cd "/etc/systemd/system"
 _cd_func "/etc/systemd/system"
 
-_check_command_and_exit_if_error "${?}" 35 "Cannot change directory to: /etc/systemd/system"
+_check_command_and_exit_if_error "${?}" 42 "Cannot change directory to: /etc/systemd/system"
 
 # If the file exists and is a symbolic link.
 if [[ -L "${SYSTEMD_RIP_SERVICE}" ]]; then
@@ -796,7 +951,7 @@ else
 
 	ln -s "${DIRECTORY}/${SYSTEMD_RIP_SERVICE}" "."
 
-	_check_command_and_exit_if_error "${?}" 36 "Cannot create systemd link to: ${DIRECTORY}/${SYSTEMD_RIP_SERVICE}"
+	_check_command_and_exit_if_error "${?}" 43 "Cannot create systemd link to: ${DIRECTORY}/${SYSTEMD_RIP_SERVICE}"
 fi
 
 # If the file exists and is a symbolic link.
@@ -808,7 +963,7 @@ else
 
 	ln -s "${DIRECTORY}/${SYSTEMD_EJECT_SERVICE}" "."
 
-	_check_command_and_exit_if_error "${?}" 37 "Cannot create systemd link to: ${DIRECTORY}/${SYSTEMD_EJECT_SERVICE}"
+	_check_command_and_exit_if_error "${?}" 44 "Cannot create systemd link to: ${DIRECTORY}/${SYSTEMD_EJECT_SERVICE}"
 fi
 
 _display_ok
@@ -819,12 +974,12 @@ _display_ok
 # Tell mpd about the new cd music directory.
 ##################################################################
 
-echo "Updating mpd."
+echo "Updating mpd with the new music directory: ${LIBRARY_TAG}"
 echo ""
 
 mpc update
 
-_check_command_and_exit_if_error "${?}" 38 "Cannot get mpd to update the music directory."
+_check_command_and_exit_if_error "${?}" 45 "Cannot get mpd to update the music directory: ${LIBRARY_TAG}"
 
 
 
@@ -842,6 +997,6 @@ trap	-	EXIT ERR SIGHUP SIGINT SIGQUIT SIGABRT SIGTERM
 
 echo ""
 echo -e "${Black}${On_Green}SUCCESS:${Colour_Off} CD ripper/player installed ok."
-echo -e "${HILITE}moOde${Colour_Off} can be accessed on ip address: ${HILITE}$(hostname -I)${Colour_Off}"
+echo -e "${HILITE}'moOde'${Colour_Off} can be accessed on ip address: ${HILITE}$(hostname -I)${Colour_Off}"
 
 exit 0
