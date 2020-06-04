@@ -1,9 +1,9 @@
 # moOde-CD-Rip-and-Play
 
-A companion program for moOde (http://moodeaudio.org/) to rip and tag CDs to 320kbps mp3 files and play them.
+A companion program for the moOde audio player (http://moodeaudio.org/) to rip and tag CDs to 320kbps mp3 files and play them.
 
-This allows a user to play their CDs without using a computer or smart phone. The volume being adjusted using a rotary encoder.
-CDs that have already been ripped can be batch queued.
+This allows a user to play their CDs without using the moOde interface. The volume being adjusted using an attached rotary encoder.
+CDs that have already been ripped can be batch queued for playing.
 
 # Requirements:
 
@@ -57,5 +57,4 @@ All other configuration options can be left unchanged.
 
 # Usage:
 
-  Insert the CD into the drive. The CD will be checked to see if it has been previously ripped. If not, the ripping process will take about 12 minutes. After this, the CD will be ejected and moOde will play the ripped files. If the CD has been previously ripped, it will be ejected and moOde will play the ripped files.
-
+  Insert the CD into the drive. The CD will be checked to see if it has been previously ripped. If not, the ripping process will take about 12 minutes. After this, the CD will be ejected and moOde will play the ripped files. If the CD has been previously ripped, it will be ejected and moOde will play the ripped files. More CDs can be inserted for batch queueing.
