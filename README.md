@@ -73,7 +73,7 @@ The required programs are:
   glyrc
   eyeD3
 
-A bash script called 'Remove-cd-rip.sh' will remove:
+A bash script called 'Remove-cd-rip.sh' can be used to remove some installed files and the links for moOde:
 
   cd-discid
   eject
