@@ -10,22 +10,23 @@ CDs that have already been ripped can be batch queued for playing.
   A working moOde image (tested on v6.5.0) on a Raspberry Pi3 . (Rpi4 not tested).
   An external CD drive attached to the USB port.
 
-# Installation:
+# Download:
 
-There is an bash script called 'Install-cd-rip.sh' that installs the required programs and creates the required links for moOde.
+  Download the files using git
 
-The required programs are:
-  cd-discid
-  eject
-  flock
-  touch
-  truncate
-  mpc
-  mpd
-  cdparanoia
-  lame
-  glyrc
-  eyeD3
+	git clone https://github.com/TheMetalHead/moOde-CD-Rip-and-Play.git
+
+  or with wget
+
+	mkdir moOde-CD-Rip-and-Play
+	cd moOde-CD-Rip-and-Play
+	wget https://github.com/TheMetalHead/moOde-CD-Rip-and-Play/archive/master.zip -O moOde-CD-Rip-and-Play.zip
+	unzip moOde-CD-Rip-and-Play.zip
+
+  After the download, do
+
+	cd moOde-CD-Rip-and-Play
+	chmod 544 *.sh
 
 # Configuration:
 
@@ -54,6 +55,34 @@ Set the log level as required by uncommenting one of the following: #_LOG_LEVEL=
 
 All other configuration options can be left unchanged.
 
+# Installation:
+
+There is an bash script called 'Install-cd-rip.sh' that checks for and installs the required programs and creates the required links for moOde.
+
+The required programs are:
+
+  cd-discid
+  eject
+  flock
+  touch
+  truncate
+  mpc
+  mpd
+  cdparanoia
+  lame
+  glyrc
+  eyeD3
+
+A bash script called 'Remove-cd-rip.sh' will remove:
+
+  cd-discid
+  eject
+  cdparanoia
+  lame
+  glyrc
+  eyeD3
+
+The downloaded 'moOde-CD-Rip-and-Play' files will be left untouched. These can be manually deleted. The ripped music cd will be left untouched, but the hidden disc id directory '.Music CDs Ripped' will be removed.
 
 # Usage:
 
