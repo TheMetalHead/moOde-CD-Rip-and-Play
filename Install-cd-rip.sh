@@ -14,6 +14,35 @@
 ##################################################################
 ##################################################################
 
+# (c) 2020 - TheMetalHead - https://github.com/TheMetalHead/moOde-CD-Rip-and-Play
+#
+# TheMetalHead/moOde-CD-Rip-and-Play is licensed under the GNU General Public License v3.0
+#
+# Permissions of this strong copyleft license are conditioned on making available complete
+# source code of licensed works and modifications, which include larger works using a
+# licensed work, under the same license. Copyright and license notices must be preserved.
+# Contributors provide an express grant of patent rights.
+#
+# A copy of the license can be found in: LICENSE
+#
+#
+# Permissions:
+#	Commercial use
+#	Modification
+#	Distribution
+#	Patent use
+#	Private use
+#
+# Limitations:
+#	Liability
+#	Warranty
+#
+# Conditions:
+#	License and copyright notice
+#	State changes
+#	Disclose source
+#	Same license
+
 
 
 ##################################################################
@@ -129,10 +158,10 @@ On_IWhite='\033[0;107m'   # White
 
 
 ##################################################################
-# Import the 'cd-rip-and-play' configuration file.
+# Import the 'cd-rip-and-or-play.conf' configuration file.
 ##################################################################
 
-source	"${DIRECTORY}/${CDRIP_CONFIG}" || { echo "ERROR: in configuration file '${DIRECTORY}/${CDRIP_CONFIG}'"; exit 1; }
+source	"${DIRECTORY}/${CDRIP_CONFIG}" || { echo "ERROR: in configuration file: ${DIRECTORY}/${CDRIP_CONFIG}"; exit 1; }
 
 
 
@@ -229,7 +258,7 @@ _get_yes_no() {
 
 	# Loop forever until the user enters a valid response (Y/N or Yes/No).
 	while true; do
-		read -r -p "${_PROMPT} " _RESPONSE
+		read -r -p "$(echo -e ${BWhite}${_PROMPT}${Colour_Off}) " _RESPONSE
 
 		case "${_RESPONSE}" in
 			[Yy][Ee][Ss]|[Yy])	# Yes or Y (case-insensitive)
@@ -449,21 +478,21 @@ echo "--------------------------------------------------------------------------
 
 
 ##################################################################
-# Check that all our files for the cd ripping exist and set the owners and file mode.
+# Check that all our files for the cd ripper exist and set the owners and file mode.
 ##################################################################
 
 echo ""
 echo "Checking our files exist and set the owners and file mode."
 
 for FILE_TO_CHECK in "${UDEV_RULE}",444 "${SYSTEMD_EJECT_SERVICE}",444 "${SYSTEMD_RIP_SERVICE}",444 "abcde.conf",644 \
-			"cd-rip-and-or-play.sh",544 "${CDRIP_CONFIG}",644 "cd-rip-eject.sh",544 "Install-cd-rip.sh",544
+			"cd-rip-and-or-play.sh",544 "${CDRIP_CONFIG}",644 "cd-rip-eject.sh",544 "Install-cd-rip.sh",544 "Remove-cd-rip.sh",544
 do
 	_FILE=${FILE_TO_CHECK%,*}
 	_MOD=${FILE_TO_CHECK#*,}
 
 	# If the file does not exist.
 	if [ ! -e "${_FILE}" ]; then
-		_exit_error 11 "CD ripper installation file '${DIRECTORY}/${_FILE}' does not exist."
+		_exit_error 11 "CD ripper file does not exist: ${DIRECTORY}/${_FILE}"
 	fi
 
 	chown "${RIPPED_MUSIC_OWNER}" "${_FILE}"
@@ -509,7 +538,12 @@ do
 
 	# If the command is not found, add it to the missing list to install later on.
 	if [ -z "${CMD_TO_CHECK}" ]; then
-		MISSING_PROGRAMS+=("${CMD}")
+		# This is a hack because the command 'eyeD3' is actually 'eyed3' in apt.
+		if [ "eyeD3" == "${CMD}" ]; then
+			MISSING_PROGRAMS+=("eyed3")
+		else
+			MISSING_PROGRAMS+=("${CMD}")
+		fi
 	fi
 done
 
@@ -519,7 +553,7 @@ if [[ -n "${MISSING_PROGRAMS[*]}" ]]; then
 
 	apt update
 
-	_check_command_and_exit_if_error "${?}" 15 "Installation of missing programs failed."
+	_check_command_and_exit_if_error "${?}" 15 "Apt package repository update failed."
 
 	echo "Installing the missing programs."
 
@@ -612,9 +646,9 @@ if [[ 1 -eq "${RV}" ]]; then
 		echo -e "${HILITE}Already patched '${ABCDE_PATCHED}'${Colour_Off}."
 	else
 		# Insert after.
-		sed -i "s/#!\/bin\/bash/&\n#\n# Patched version for use with 'moOde' audio player (http:\/\/moodeaudio.org\/)/" "${ABCDE_PATCHED}"
-		sed -i "s/moodeaudio.org\/)/&\n# created by the 'TheMetalHead' (https:\/\/github.com\/TheMetalHead\/moOde-CD-Rip-and-Play)/" "${ABCDE_PATCHED}"
-		sed -i "s/moOde-CD-Rip-and-Play)/&\n# Look for the patch marker: ${PATCH_START_MARKER}\n#/" "${ABCDE_PATCHED}"
+		sed -i "s/#!\/bin\/bash/&\n#\n# Patched version of 'abcde' for use with the 'moOde' audio player (http:\/\/moodeaudio.org\/)/" "${ABCDE_PATCHED}"
+		sed -i "s/moodeaudio.org\/)/&\n# created by the 'TheMetalHead' installer (https:\/\/github.com\/TheMetalHead\/moOde-CD-Rip-and-Play)/" "${ABCDE_PATCHED}"
+		sed -i "s/moOde-CD-Rip-and-Play)/&\n# Look for the modifications after the patch marker: ${PATCH_START_MARKER}\n#/" "${ABCDE_PATCHED}"
 
 # Cannot do this.
 #		sed '/^${PATCH_LOCATION}$/r'<(
@@ -996,7 +1030,7 @@ trap	-	EXIT ERR SIGHUP SIGINT SIGQUIT SIGABRT SIGTERM
 ##################################################################
 
 echo ""
-echo -e "${Black}${On_Green}SUCCESS:${Colour_Off} CD ripper/player installed ok."
+echo -e "${Black}${On_Green}SUCCESS:${Colour_Off} CD ripper/player for ${HILITE}'moOde'${Colour_Off} installed ok."
 echo -e "${HILITE}'moOde'${Colour_Off} can be accessed on ip address: ${HILITE}$(hostname -I)${Colour_Off}"
 
 exit 0

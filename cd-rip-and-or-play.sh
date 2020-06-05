@@ -2,9 +2,44 @@
 #
 # A CD ripping/playing program for 'moOde'.
 #
-# Do we need to reload udev rules ???
+##################################################################
+##################################################################
+##################################################################
 #
-#	sudo udevadm control –reload
+# Do not change anything from here on.
+#
+##################################################################
+##################################################################
+##################################################################
+
+# (c) 2020 - TheMetalHead - https://github.com/TheMetalHead/moOde-CD-Rip-and-Play
+#
+# TheMetalHead/moOde-CD-Rip-and-Play is licensed under the GNU General Public License v3.0
+#
+# Permissions of this strong copyleft license are conditioned on making available complete
+# source code of licensed works and modifications, which include larger works using a
+# licensed work, under the same license. Copyright and license notices must be preserved.
+# Contributors provide an express grant of patent rights.
+#
+# A copy of the license can be found in: LICENSE
+#
+#
+# Permissions:
+#	Commercial use
+#	Modification
+#	Distribution
+#	Patent use
+#	Private use
+#
+# Limitations:
+#	Liability
+#	Warranty
+#
+# Conditions:
+#	License and copyright notice
+#	State changes
+#	Disclose source
+#	Same license
 
 
 
