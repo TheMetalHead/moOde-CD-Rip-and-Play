@@ -14,7 +14,8 @@ ExecStart=/home/pi/Src/cd-rip/cd-rip-eject.sh
 
 # ExecStop=killall cd-rip-eject.sh
 
-# StandardOutput=syslog
+StandardOutput=/dev/null
+
 # StandardError=syslog
 
 [Install]
