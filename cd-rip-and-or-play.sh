@@ -74,8 +74,6 @@ readonly	_DIRECTORY=$(dirname "${_FULLPATHNAME}")
 # cd-rip-and-or-play
 readonly	_SCRIPTNAME=$(basename "${BASH_SOURCE[0]}" .sh)
 
-
-
 readonly	_LOCKNAME="/var/lock/${SCRIPTNAME}.lock"
 
 # The 'abcde.conf' file should be in the same directory as this cd ripping program.
@@ -87,6 +85,8 @@ readonly	_CDRIP_CONFIG="${_DIRECTORY}/${_SCRIPTNAME}.conf"
 
 # /home/pi/Src/cd-rip/abcde
 readonly	_CMD_ABCDE_PATCHED="${_DIRECTORY}/abcde-patched"
+
+readonly	_SW_VERSION="1.0"
 
 
 
@@ -612,6 +612,12 @@ else
                 _LOG_LEVEL=${LOG_LEVEL_NOLOG}
 	fi
 fi
+
+##################################################################
+# Output the software version.
+##################################################################
+
+_log_log "Version ${_SW_VERSION}"
 
 ##################################################################
 # Set up the pipe if available.
