@@ -86,7 +86,22 @@ readonly	_CDRIP_CONFIG="${_DIRECTORY}/${_SCRIPTNAME}.conf"
 # /home/pi/Src/cd-rip/abcde
 readonly	_CMD_ABCDE_PATCHED="${_DIRECTORY}/abcde-patched"
 
-readonly	_SW_VERSION="1.0"
+readonly	_SW_VERSION="1.1"
+
+
+
+##################################################################
+# Changes.
+##################################################################
+
+# Version 1.1	Sat 6-Jun-2020
+#
+#	Added code to only rip and tag one track when in debug mode and
+#	also display the full text output of 'abcde'.
+#
+# Version 1.0	Fri 5-Jun-2020
+#
+#	Initial release.
 
 
 
@@ -533,7 +548,6 @@ _cleanup_abcde() {
 
 ###	# THIS DOES NOT WORK. WHY???
 ###	if [ -d "${TEMP_DIR}/abcde.*" ]; then
-
 
 
 	for ABCDEDIR in "${TEMP_DIR}"/abcde.*
@@ -992,19 +1006,22 @@ if [ 0 -ne "${RV}" ]; then
 
 
 
-		{ ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" >> "${LOGFILE}"; } 2>&1
-
-
-
 		# Any error from the 'abcde' ripping software will result in an immediate
 		# call to '_abcde_exit_error' here. This will eject the cd and clean up
 		# the 'abcde' temporary directory.
+		if [ "${LOG_LEVEL_DEBUG}" -eq "${_LOG_LEVEL}" ]; then
+			# We only rip and tag one track when in debug mode
+			# and also display the full text output of 'abcde'.
+			_G_RESULT=$( { ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 1 >> "${LOGFILE}"; } 2>&1 )
 
-#		_G_RESULT=$( { ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 2-3 >> "${LOGFILE}"; } 2>&1 )
+			RV=$?
 
-		RV=$?
+			_log_result "${_G_RESULT}"
+		else
+			{ ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" >> "${LOGFILE}"; } 2>&1
 
-#		_log_result "${_G_RESULT}"
+			RV=$?
+		fi
 
 
 
