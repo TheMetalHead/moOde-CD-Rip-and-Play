@@ -57,13 +57,15 @@ readonly	FULLPATHNAME=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null||echo "$0")
 # /home/pi/Src/cd-rip
 readonly	DIRECTORY=$(dirname "${FULLPATHNAME}")
 
-readonly	CDRIP_CONFIG="cd-rip-and-or-play.conf"
+readonly	CD_RIP_AND_OR_PLAY="cd-rip-and-or-play"
+
+readonly	CDRIP_CONFIG="${CD_RIP_AND_OR_PLAY}.conf"
 
 readonly	UDEV_RULE="99-srX.rules"
 
 readonly	SYSTEMD_EJECT_SERVICE="cd-rip-eject.service"
 
-readonly	SYSTEMD_RIP_SERVICE="cd-rip-and-or-play.service"
+readonly	SYSTEMD_RIP_SERVICE="${CD_RIP_AND_OR_PLAY}.service"
 
 # This is for patching 'abcde'. It overcomes a small bug when
 # using Musicbrainz as it does not return the genre.
@@ -258,7 +260,7 @@ _get_yes_no() {
 
 	# Loop forever until the user enters a valid response (Y/N or Yes/No).
 	while true; do
-		read -r -p "$(echo -e ${BWhite}${_PROMPT}${Colour_Off}) " _RESPONSE
+		read -r -p "$(echo -e "${BWhite}${_PROMPT}${Colour_Off}") " _RESPONSE
 
 		case "${_RESPONSE}" in
 			[Yy][Ee][Ss]|[Yy])	# Yes or Y (case-insensitive)
@@ -484,7 +486,7 @@ echo "--------------------------------------------------------------------------
 echo ""
 echo "Checking our files exist and set the owners and file mode."
 
-for FILE_TO_CHECK in "${UDEV_RULE}",444 "${SYSTEMD_EJECT_SERVICE}",444 "${SYSTEMD_RIP_SERVICE}",444 "abcde.conf",644 \
+for FILE_TO_CHECK in "${UDEV_RULE}",444 "${SYSTEMD_EJECT_SERVICE}",444 "${SYSTEMD_RIP_SERVICE}",444 "abcde.conf",644 "cd-rip-and-or-play",644 \
 			"cd-rip-and-or-play.sh",544 "${CDRIP_CONFIG}",644 "cd-rip-eject.sh",544 "Install-cd-rip.sh",544 "Remove-cd-rip.sh",544
 do
 	_FILE=${FILE_TO_CHECK%,*}
@@ -531,18 +533,24 @@ echo "Checking for the required programs."
 
 MISSING_PROGRAMS=()
 
-for CMD in "abcde" "cd-discid" "eject" "flock" "touch" "truncate" "mpc" "mpd" "cdparanoia" "lame" "glyrc" "eyeD3"
+for CMD in "abcde" "cd-discid" "eject" "flock" "touch" "truncate" "mpc" "mpd" "cdparanoia" "lame" "flac" "mpcenc" "glyrc" "eyeD3"
 do
 	# Check if the command exists and is executable.
 	CMD_TO_CHECK=$(command -v "${CMD}")
 
 	# If the command is not found, add it to the missing list to install later on.
 	if [ -z "${CMD_TO_CHECK}" ]; then
-		# This is a hack because the command 'eyeD3' is actually 'eyed3' in apt.
+		# HACK - HACK - HACK - HACK - HACK - HACK
+		# 'eyeD3' is actually 'eyed3' in apt.
+		# 'mpcenc' is actually 'musepack-tools' in apt.
 		if [ "eyeD3" == "${CMD}" ]; then
 			MISSING_PROGRAMS+=("eyed3")
 		else
-			MISSING_PROGRAMS+=("${CMD}")
+			if [ "mpcenc" == "${CMD}" ]; then
+				MISSING_PROGRAMS+=("musepack-tools")
+			else
+				MISSING_PROGRAMS+=("${CMD}")
+			fi
 		fi
 	fi
 done
@@ -960,7 +968,7 @@ if [[ -L "${UDEV_RULE}" ]]; then
 	echo "Udev rules link already exists to: ${DIRECTORY}/${UDEV_RULE}"
 else
 	# /home/pi/Src/cd-rip/99-srX.rules
-	echo "Creating udev link: '${DIRECTORY}/${UDEV_RULE}'"
+	echo "Creating udev link to: '${DIRECTORY}/${UDEV_RULE}'"
 
 	ln -s "${DIRECTORY}/${UDEV_RULE}" "."
 
@@ -1005,6 +1013,41 @@ _display_ok
 
 
 ##################################################################
+# Create the log rotate entry.
+##################################################################
+
+echo "Checking for installed logrotate file."
+
+# cd "/etc/logrotate.d"
+_cd_func "/etc/logrotate.d"
+
+_check_command_and_exit_if_error "${?}" 45 "Cannot change directory to: /etc/logrotate.d"
+
+# If the file exists and is a symbolic link.
+if [[ -L "${CD_RIP_AND_OR_PLAY}" ]]; then
+	echo "Logrotate link already exists to: ${DIRECTORY}/${CD_RIP_AND_OR_PLAY}"
+else
+	# /home/pi/Src/cd-rip/cd-rip-and-or-play
+	echo "Creating logrotate link to: '${DIRECTORY}/${CD_RIP_AND_OR_PLAY}'"
+
+	ln -s "${DIRECTORY}/${CD_RIP_AND_OR_PLAY}" "."
+
+	_check_command_and_exit_if_error "${?}" 46 "Cannot create udev rule link to: ${DIRECTORY}/${CD_RIP_AND_OR_PLAY}"
+
+	chown "root:root" "${CD_RIP_AND_OR_PLAY}"
+
+	_check_command_and_exit_if_error "${?}" 47 "Cannot change owner of file: ${CD_RIP_AND_OR_PLAY}"
+
+	chmod 644 "${CD_RIP_AND_OR_PLAY}"
+
+	_check_command_and_exit_if_error "${?}" 48 "Cannot change file mode of: ${CD_RIP_AND_OR_PLAY} to: 644"
+fi
+
+_display_ok
+
+
+
+##################################################################
 # Tell mpd about the new cd music directory.
 ##################################################################
 
@@ -1013,7 +1056,7 @@ echo ""
 
 mpc update
 
-_check_command_and_exit_if_error "${?}" 45 "Cannot get mpd to update the music directory: ${LIBRARY_TAG}"
+_check_command_and_exit_if_error "${?}" 49 "Cannot get mpd to update the music directory: ${LIBRARY_TAG}"
 
 
 

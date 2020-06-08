@@ -57,15 +57,17 @@ readonly	FULLPATHNAME=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null||echo "$0")
 # /home/pi/Src/cd-rip
 readonly	DIRECTORY=$(dirname "${FULLPATHNAME}")
 
-readonly	LOGFILE="/var/log/cd-rip-and-or-play.log"
+readonly	CD_RIP_AND_OR_PLAY="cd-rip-and-or-play"
 
-readonly	CDRIP_CONFIG="cd-rip-and-or-play.conf"
+readonly	LOGFILE="/var/log/${CD_RIP_AND_OR_PLAY}.log"
+
+readonly	CDRIP_CONFIG="${CD_RIP_AND_OR_PLAY}.conf"
 
 readonly	UDEV_RULE="99-srX.rules"
 
 readonly	SYSTEMD_EJECT_SERVICE="cd-rip-eject.service"
 
-readonly	SYSTEMD_RIP_SERVICE="cd-rip-and-or-play.service"
+readonly	SYSTEMD_RIP_SERVICE="${CD_RIP_AND_OR_PLAY}.service"
 
 readonly	ABCDE_PATCHED="abcde-patched"
 
@@ -251,7 +253,7 @@ _get_yes_no() {
 
 	# Loop forever until the user enters a valid response (Y/N or Yes/No).
 	while true; do
-		read -r -p "$(echo -e ${BWhite}${_PROMPT}${Colour_Off}) " _RESPONSE
+		read -r -p "$(echo -e "${BWhite}${_PROMPT}${Colour_Off}") " _RESPONSE
 
 		case "${_RESPONSE}" in
 			[Yy][Ee][Ss]|[Yy])	# Yes or Y (case-insensitive)
@@ -344,7 +346,7 @@ fi
 HILITE="${BCyan}"
 
 echo ""
-echo -e "Remove the installed cd ripper software for use with ${HILITE}'moOde'${Colour_Off}."
+echo -e "Remove the installed cd ripper software being used with ${HILITE}'moOde'${Colour_Off}."
 
 if [ ! -f "/var/www/command/moode.php" ]; then
 	echo ""
@@ -443,7 +445,7 @@ echo "--------------------------------------------------------------------------
 echo ""
 echo "Checking that our cd ripper files exist."
 
-for FILE_TO_CHECK in "${UDEV_RULE}" "${SYSTEMD_EJECT_SERVICE}" "${SYSTEMD_RIP_SERVICE}" "abcde.conf" \
+for FILE_TO_CHECK in "${UDEV_RULE}" "${SYSTEMD_EJECT_SERVICE}" "${SYSTEMD_RIP_SERVICE}" "abcde.conf" "cd-rip-and-or-play" \
 			"cd-rip-and-or-play.sh" "${CDRIP_CONFIG}" "cd-rip-eject.sh" "Install-cd-rip.sh" "Remove-cd-rip.sh"
 do
 	# If the file does not exist.
@@ -531,6 +533,8 @@ if [[ -L "${UDEV_RULE}" ]]; then
 	rm -f "${UDEV_RULE}"
 
 	_check_command_and_exit_if_error "${?}" 15 "Cannot remove udev rule link: ${UDEV_RULE}"
+else
+	echo "No udev link found to remove: '${UDEV_RULE}'"
 fi
 
 _display_ok
@@ -550,6 +554,8 @@ if [[ -L "${SYSTEMD_RIP_SERVICE}" ]]; then
 	rm -f "${SYSTEMD_RIP_SERVICE}"
 
 	_check_command_and_exit_if_error "${?}" 17 "Cannot remove systemd link: ${SYSTEMD_RIP_SERVICE}"
+else
+	echo "No systemd link found to remove: '${SYSTEMD_RIP_SERVICE}'"
 fi
 
 # If the 'cd-rip-eject.service' file exists and is a symbolic link.
@@ -560,6 +566,35 @@ if [[ -L "${SYSTEMD_EJECT_SERVICE}" ]]; then
 	rm -f "${SYSTEMD_EJECT_SERVICE}"
 
 	_check_command_and_exit_if_error "${?}" 18 "Cannot remove systemd link: ${SYSTEMD_EJECT_SERVICE}"
+else
+	echo "No systemd link found to remove: '${SYSTEMD_EJECT_SERVICE}'"
+fi
+
+_display_ok
+
+
+
+##################################################################
+# Remove the log rotate entry.
+##################################################################
+
+echo "Checking for installed logrotate file."
+
+# cd "/etc/logrotate.d"
+_cd_func "/etc/logrotate.d"
+
+_check_command_and_exit_if_error "${?}" 19 "Cannot change directory to: /etc/logrotate.d"
+
+# If the file exists and is a symbolic link.
+if [[ -L "${CD_RIP_AND_OR_PLAY}" ]]; then
+	echo "Removing logrotate link: '${CD_RIP_AND_OR_PLAY}'"
+
+	# cd-rip-and-or-play
+	rm -f "${CD_RIP_AND_OR_PLAY}"
+
+	_check_command_and_exit_if_error "${?}" 20 "Cannot remove logrotate link: ${CD_RIP_AND_OR_PLAY}"
+else
+	echo "No logrotate link found to remove: '${CD_RIP_AND_OR_PLAY}'"
 fi
 
 _display_ok
@@ -574,19 +609,24 @@ echo "Checking for the installed programs to remove."
 
 PROGRAMS_TO_REMOVE=()
 
-for CMD in "abcde" "cd-discid" "eject" "cdparanoia" "lame" "glyrc" "eyeD3"
+for CMD in "abcde" "cd-discid" "eject" "cdparanoia" "lame" "flac" "mpcenc" "glyrc" "eyeD3"
 do
 	# Check if the command exists and is executable.
 	CMD_TO_CHECK=$(command -v "${CMD}")
 
 	# If the command is found, add it to the list to remove later on.
 	if [ -n "${CMD_TO_CHECK}" ]; then
-
-		# This is a hack because the command 'eyeD3' is actually 'eyed3' in apt.
+		# HACK - HACK - HACK - HACK - HACK - HACK
+		# 'eyeD3' is actually 'eyed3' in apt.
+		# 'mpcenc' is actually 'musepack-tools' in apt.
 		if [ "eyeD3" == "${CMD}" ]; then
 			PROGRAMS_TO_REMOVE+=("eyed3")
 		else
-			PROGRAMS_TO_REMOVE+=("${CMD}")
+			if [ "mpcenc" == "${CMD}" ]; then
+				PROGRAMS_TO_REMOVE+=("musepack-tools")
+			else
+				PROGRAMS_TO_REMOVE+=("${CMD}")
+			fi
 		fi
 	fi
 done
@@ -599,11 +639,13 @@ if [[ -n "${PROGRAMS_TO_REMOVE[*]}" ]]; then
 
 	apt update
 
-	_check_command_and_exit_if_error "${?}" 19 "Apt package repository update failed."
+	_check_command_and_exit_if_error "${?}" 21 "Apt package repository update failed."
 
 	apt purge --auto-remove "${PROGRAMS_TO_REMOVE[@]}"
 
-	_check_command_and_exit_if_error "${?}" 20 "Removing installed programs failed."
+	_check_command_and_exit_if_error "${?}" 22 "Removing installed programs failed."
+else
+	echo "No programs found to remove."
 fi
 
 _display_ok
@@ -619,15 +661,17 @@ echo "Changing directory to: ${DIRECTORY}"
 # cd "${DIRECTORY}"
 _cd_func "${DIRECTORY}"
 
-_check_command_and_exit_if_error "${?}" 21 "Cannot change directory to: ${DIRECTORY}"
+_check_command_and_exit_if_error "${?}" 23 "Cannot change directory to: ${DIRECTORY}"
 
 # If the file exists.
 if [ -e "${ABCDE_PATCHED}" ]; then
-	echo "Removing the program: ${ABCDE_PATCHED}"
+	echo "Removing the patched 'abcde' program: ${ABCDE_PATCHED}"
 
 	rm -f "${ABCDE_PATCHED}"
 
-	_check_command_and_exit_if_error "${?}" 22 "Cannot remove patched version of '${ABCDE_PATCHED}'"
+	_check_command_and_exit_if_error "${?}" 24 "Cannot remove patched version of '${ABCDE_PATCHED}'"
+else
+	echo "No patched 'abcde' program to remove: ${ABCDE_PATCHED}"
 fi
 
 _display_ok
@@ -645,7 +689,7 @@ echo "Checking for the cd music storage directory: ${MY_MUSIC_CD_DIR}"
 
 # If the directory does not exist.
 if [[ ! -d "${MY_MUSIC_CD_DIR}" ]]; then
-	_exit_error 23 "Cannot find directory: ${MY_MUSIC_CD_DIR}"
+	_exit_error 25 "Cannot find directory: ${MY_MUSIC_CD_DIR}"
 fi
 
 _display_ok
@@ -667,7 +711,9 @@ if [ -d "${DISCID_DIR}" ]; then
 
 	rm -f -r "${DISCID_DIR}"
 
-	_check_command_and_exit_if_error "${?}" 24 "Cannot remove directory: ${DISCID_DIR}"
+	_check_command_and_exit_if_error "${?}" 26 "Cannot remove directory: ${DISCID_DIR}"
+else
+	echo "No ripped id directory found: ${DISCID_DIR}"
 fi
 
 _display_ok
@@ -683,7 +729,7 @@ echo "Changing directory to: /mnt"
 # cd "/mnt"
 _cd_func "/mnt"
 
-_check_command_and_exit_if_error "${?}" 25 "Cannot change directory to: /mnt"
+_check_command_and_exit_if_error "${?}" 27 "Cannot change directory to: /mnt"
 
 # /mnt/CD
 MNT_CD="/mnt/${MUSIC_MNT_SOURCE}"
@@ -698,7 +744,9 @@ if [[ -d "${MNT_CD}" || -h "${MNT_CD}" ]]; then
 
 	rm "${MNT_CD}"
 
-	_check_command_and_exit_if_error "${?}" 26 "Cannot remove the link to: ${MY_MUSIC_CD_DIR}"
+	_check_command_and_exit_if_error "${?}" 28 "Cannot remove the link to: ${MY_MUSIC_CD_DIR}"
+else
+	echo "No link found: ${MNT_CD}"
 fi
 
 _display_ok
@@ -715,7 +763,7 @@ echo "Changing directory to: ${MPD_MUSIC_DIR}"
 # cd "${MPD_MUSIC_DIR}"
 _cd_func "${MPD_MUSIC_DIR}"
 
-_check_command_and_exit_if_error "${?}" 27 "Cannot change directory to: ${MPD_MUSIC_DIR}"
+_check_command_and_exit_if_error "${?}" 29 "Cannot change directory to: ${MPD_MUSIC_DIR}"
 
 echo "Checking for link: ${LIBRARY_TAG} to: ${MNT_CD}"
 
@@ -729,7 +777,9 @@ if [[ -L "${LIBRARY_TAG}" ]]; then
 
 	rm "${LIBRARY_TAG}"
 
-	_check_command_and_exit_if_error "${?}" 28 "Cannot remove link to: ${LIBRARY_TAG}"
+	_check_command_and_exit_if_error "${?}" 30 "Cannot remove link to: ${LIBRARY_TAG}"
+else
+	echo "Link: ${LIBRARY_TAG} to: ${MNT_CD} not found."
 fi
 
 _display_ok
@@ -745,7 +795,7 @@ echo ""
 
 mpc update
 
-_check_command_and_exit_if_error "${?}" 29 "Cannot get mpd to update."
+_check_command_and_exit_if_error "${?}" 31 "Cannot get mpd to update."
 
 _display_ok
 
@@ -755,16 +805,20 @@ _display_ok
 # Remove the log file.
 ##################################################################
 
+echo "Checking for log file: ${LOGFILE}"
+
 # If the file exists.
 if [ -e "${LOGFILE}" ]; then
 	echo "Removing the log file: ${LOGFILE}"
 
 	rm -f "${LOGFILE}"
 
-	_check_command_and_exit_if_error "${?}" 30 "Cannot remove the log file: ${LOGFILE}"
-
-	_display_ok
+	_check_command_and_exit_if_error "${?}" 32 "Cannot remove the log file: ${LOGFILE}"
+else
+	echo "No log file found: ${LOGFILE}"
 fi
+
+_display_ok
 
 
 
