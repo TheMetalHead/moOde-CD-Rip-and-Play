@@ -74,7 +74,7 @@ readonly	_DIRECTORY=$(dirname "${_FULLPATHNAME}")
 # cd-rip-and-or-play
 readonly	_SCRIPTNAME=$(basename "${BASH_SOURCE[0]}" .sh)
 
-readonly	_LOCKNAME="/var/lock/${SCRIPTNAME}.lock"
+readonly	_LOCKNAME="/var/lock/${_SCRIPTNAME}.lock"
 
 # The 'abcde.conf' file should be in the same directory as this cd ripping program.
 # /home/pi/Src/cd-rip/abcde.conf
@@ -879,7 +879,7 @@ _G_CD_DISC_ID="${_G_DISCID_DIR}/${_G_DISC_ID}"
 _log_debug "Looking for: ${_G_CD_DISC_ID} -*"
 
 # If the tag exists. Returns 0 if found else 2 if not found.
-${CMD_LS} "${_G_CD_DISC_ID}"\ -* 2>&1
+${CMD_LS} "${_G_CD_DISC_ID}"\ -*._* 2>&1
 
 RV=${?}
 
@@ -971,7 +971,8 @@ if [ 0 -ne "${RV}" ]; then
 		trap	_abcde_exit_error	EXIT ERR SIGHUP SIGINT SIGQUIT SIGABRT SIGTERM
 
 
-
+#		# Info from somewhere on the web.
+#
 #		# ABCDE has a bug where it tries to rip data cd's. But the version that fixes it itself has
 #		# even more. So instead of trying to install the new version, which doesn't work, we use a command
 #		# similar to the one ABCDE uses to determine the number of valid tracks (since it assumes the data
@@ -1012,6 +1013,7 @@ if [ 0 -ne "${RV}" ]; then
 		if [ "${LOG_LEVEL_DEBUG}" -eq "${_LOG_LEVEL}" ]; then
 			# We only rip and tag one track when in debug mode
 			# and also display the full text output of 'abcde'.
+			# Run 2 encoder jobs while it rips: -j 2 Is this the same as MAXPROCS=2 ?
 			_G_RESULT=$( { ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 1 >> "${LOGFILE}"; } 2>&1 )
 
 			RV=$?
@@ -1098,10 +1100,17 @@ fi	# End of 'if [ 0 -ne "${RV}" ]; then'
 # Looking for '/var/lib/mpd/music/My CDs/.Music CDs Ripped/520cd708 -*' again.
 _log_ok "Looking for '${_G_CD_DISC_ID} -*' again."
 
-# Returns 0 if found else 2 if not found.
-_G_CD=$(${CMD_LS} "${_G_CD_DISC_ID}"\ -* 2>&1)
+# Look for the best bitrate.
+for _MODE in "flac" "mpc" "mp3"; do
+	# Returns 0 if found else 2 if not found.
+	_G_CD=$(${CMD_LS} "${_G_CD_DISC_ID}"\ -*._"${_MODE}" 2>&1)
 
-RV=${?}
+	RV=${?}
+
+	if [ 0 -eq "${RV}" ]; then
+		break
+	fi
+done
 
 # If the result of the '${CMD_LS} "${_G_CD_DISC_ID}"-* is not zero.
 if [ 0 -ne "${RV}" ]; then
@@ -1152,7 +1161,8 @@ else
 ##		_log_debug "First: ${FIRST}"
 
 		# If starts with '[' and ends with ']'.
-		if [[ ( "${FIRST}" == [* ) && ( "${FIRST}" == *] ) ]]; then
+#		if [[ ( "${FIRST}" == [* ) && ( "${FIRST}" == *] ) ]]; then
+		if [[ ( "${FIRST}" == "[*" ) && ( "${FIRST}" == "*]" ) ]]; then
 			_decode_state_line_state "${_L_LINE}"
 		else
 			# If starts with 'volume:'.
@@ -1314,7 +1324,7 @@ else
 				# Adding track: Metallica/Master Of Puppets/(Metallica) Master Of Puppets - 01) Battery.mp3
 				_log_debug "Adding track: ${_L_LINE}"
 
-				if [ -z "$MUSIC_SUB_DIR" ]; then
+				if [ -z "${MUSIC_SUB_DIR}" ]; then
 #					MSG=$(${CMD_MPC} -v add "${MUSIC_MNT_SOURCE}/${_L_LINE}")
 					MSG=$(${CMD_MPC} -v add "${LIBRARY_TAG}/${_L_LINE}")
 				else
