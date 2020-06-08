@@ -1,0 +1,38 @@
+#######################################################################
+#
+# RELEASE NOTES
+#
+# (C) TheMetalHead 2020
+#
+# https://github.com/TheMetalHead/moOde-CD-Rip-and-Play
+#
+#######################################################################
+
+#######################################################################
+#
+# v1.1	(8-Jun-2020)
+#
+#######################################################################
+
+Updates
+
+	Allow rip to mp3 and/or flac and/or Musepack files.
+	Allow mapping for missing genre.
+	Added cdtext to the list of lookup methods.
+	Selects the best format of flac, mpc or mp3 to play in mpd.
+	Added command line script to do a painless update.
+
+Bug fixes
+
+	Fixed lockname bug in cd-rip-and-or-play.sh
+	Now looks at all the cddb matches
+	Does not rename tracks that have already been renamed.
+
+
+#######################################################################
+#
+# v1.0	(5-Jun-2020)
+#
+#######################################################################
+
+	First release
