@@ -928,11 +928,6 @@ if [ 0 -ne "${RV}" ]; then
 		# Ensure that 'abcde' does not fail if it finds a previous unfinished rip.
 		_cleanup_abcde
 
-		# export	-f	_write_to_pipe
-		export	-f	_log_log
-		export	-f	_log_warn
-		export	-f	_log_debug
-
 		# Allow 'abcde' acess to these variables.
 		# Export needed things so they can be read in this subshell.
 
@@ -1032,10 +1027,6 @@ if [ 0 -ne "${RV}" ]; then
 
 		# Remove the exports.
 		# export	-n	_write_to_pipe
-
-		export	-n	_log_log
-		export	-n	_log_warn
-		export	-n	_log_debug
 
 		export	-n	LOG_LEVEL_NOLOG
 		export	-n	LOG_LEVEL_FATAL
