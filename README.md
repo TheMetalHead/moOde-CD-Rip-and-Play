@@ -4,7 +4,7 @@ A companion program for the moOde audio player (http://moodeaudio.org/) to rip a
 
 This is not a program for an alternative user interface to moOde.
 
-It allows a user to play their CDs without using the moOde interface. The volume being adjusted using an attached rotary encoder. CDs that have already been ripped can be batch queued for playing.
+It allows a user to play their CDs without using the moOde interface. The volume being adjusted using an attached rotary encoder. CDs that have already been ripped can be batch queued for playing. It sort of emulates the old fashioned juke box except that instead of feeding in money, you feed in the discs.
 
 Is copying CDs legal? If you are not sure what the position is for the country you live in, please check your local copyright law to make sure that you are on the right side of the law before using the software featured here.
 
@@ -72,7 +72,7 @@ The configuration file: abcde.conf
 
 # Installation:
 
-There is an bash script called 'Install-cd-rip.sh' that checks for and installs the required programs and creates the required links for moOde.
+There is a bash script called 'Install-cd-rip.sh' that checks for and installs the required programs and creates the required links for moOde.
 
 The required programs are:
 
@@ -106,15 +106,15 @@ The downloaded 'moOde-CD-Rip-and-Play' files will be left untouched. These can b
 
 # Updating:
 
-  The best way is to use the script called 'Update-cd-rip.sh' if it is available, otherwise it is all performed from the command line:
-
   Before installing a new version of the software, create a backup copy of the current directory excluding any sub-directories. If anything goes wrong with new version there will always be a way to rollback to the old version.
 
 	To backup:	tar -cvpzf backup.tar.gz --no-recursion *
 
 	To restore:	tar -xf backup.tar.gz
 
+  The best way is to use the script called 'Update-cd-rip.sh' if it is available.
 
+  Alternatively, from the command line:
 
 	To update:
 
@@ -129,6 +129,8 @@ The downloaded 'moOde-CD-Rip-and-Play' files will be left untouched. These can b
 	chmod 544 *.sh
 
 	cp cd-rip-and-or-play.conf.bak cd-rip-and-or-play.conf
+
+After the update, run the script 'Install-cd-rip.sh', there is no need to reboot.
 
 # Usage:
 
