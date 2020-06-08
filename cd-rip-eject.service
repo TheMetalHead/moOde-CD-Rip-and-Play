@@ -1,4 +1,4 @@
-[UNIT]
+[Unit]
 Description=Audio cd ejection
 After=udisks-glue
 
@@ -14,7 +14,7 @@ ExecStart=/home/pi/Src/cd-rip/cd-rip-eject.sh
 
 # ExecStop=killall cd-rip-eject.sh
 
-StandardOutput=/dev/null
+# StandardOutput=null
 
 # StandardError=syslog
 
