@@ -1,0 +1,11 @@
+# These are the genres that need converting because 'abcde' does not recognise them.
+# One per line in the format of "From cd genre" = "To abcde genre".
+# It is not case sensitive.
+# It is not needed now because we do the tagging after all the tracks have been ripped.
+
+# To enable this file, copy it to 'genres-to-convert.txt' and
+# add/change the entries in 'genres-to-convert.txt'.
+
+"nu metal"="metal"
+"psychedelic rock"="psychadel. rock"
+"Progressive Rock" = "PRogress. rock"		# Comments are also allowed here
