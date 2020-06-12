@@ -74,6 +74,10 @@ readonly	_DIRECTORY=$(dirname "${_FULLPATHNAME}")
 # cd-rip-and-or-play
 readonly	_SCRIPTNAME=$(basename "${BASH_SOURCE[0]}" .sh)
 
+# The file with the list of cd genres to re-map to abcde genres.
+# This can be empty or non-existant.
+readonly	GENRES_TO_CONVERT_FILE="${_DIRECTORY}/genres-to-convert.txt"
+
 readonly	_LOCKNAME="/var/lock/${_SCRIPTNAME}.lock"
 
 # The 'abcde.conf' file should be in the same directory as this cd ripping program.
@@ -83,9 +87,12 @@ readonly	_ABCDE_CONFIG="${_DIRECTORY}/abcde.conf"
 # /home/pi/Src/cd-rip/cd-rip-and-or-play.conf
 readonly	_CDRIP_CONFIG="${_DIRECTORY}/${_SCRIPTNAME}.conf"
 
-# /home/pi/Src/cd-rip/abcde
-readonly	_CMD_ABCDE_PATCHED="${_DIRECTORY}/abcde-patched"
+# The installed encoders.
+readonly	_CMD_LAME="/usr/bin/lame"
+readonly	_CMD_METAFLAC="/usr/bin/metaflac"
+readonly	_CMD_MPCENC="/usr/bin/mpcenc"
 
+# This software version.
 readonly	_SW_VERSION="1.1"
 
 
@@ -120,13 +127,12 @@ PIPE="${TEMP_DIR}/${_SCRIPTNAME}.pipe"
 # Only needed for test purposes.
 ##################################################################
 
-# echo "Script name:       ${_SCRIPTNAME}"
-# echo "Full pathname:     ${_FULLPATHNAME}"
-# echo "Directory:         ${_DIRECTORY}"
-# echo "Cdrip comfig:      ${_CDRIP_CONFIG}"
-# echo "Abcde config:      ${_ABCDE_CONFIG}"
-# echo "Cmd abcde patched: ${_CMD_ABCDE_PATCHED}"
-# echo "Logfile:           ${LOGFILE}"
+# echo "Script name:   ${_SCRIPTNAME}"
+# echo "Full pathname: ${_FULLPATHNAME}"
+# echo "Directory:     ${_DIRECTORY}"
+# echo "Cdrip comfig:  ${_CDRIP_CONFIG}"
+# echo "Abcde config:  ${_ABCDE_CONFIG}"
+# echo "Logfile:       ${LOGFILE}"
 
 
 
@@ -349,7 +355,9 @@ _check_for_required_command() {
 	fi
 
 	# Check if the command exists and is executable.
-	if [ ! -x "${_L_CMD}" ]; then
+	RV=$( which "${_L_CMD}" )
+
+	if [[ -z "${RV}" ]]; then
 		_log_fatal_and_exit "$1" "Required command '${_L_CMD}' not installed."
 	fi
 }
@@ -791,7 +799,7 @@ _log_debug "Using config file: ${_ABCDE_CONFIG}"
 # Exit if command not found.
 ##################################################################
 
-for CMD_TO_CHECK in ${CMD_CDDISCID} ${CMD_ABCDE} ${CMD_EJECT} ${CMD_FLOCK} ${CMD_MPC}
+for CMD_TO_CHECK in ${CMD_CDDISCID} ${CMD_ABCDE} ${CMD_EJECT} ${CMD_FLOCK} ${CMD_MPC} ${_CMD_LAME} ${_CMD_METAFLAC} ${_CMD_MPCENC}
 do
 	_check_for_required_command 17 "${CMD_TO_CHECK}"
 done
@@ -888,7 +896,7 @@ _log_debug "${CDROM}"
 _log_debug "${MUSIC_DIR}                      # /var/lib/mpd/music/SDCARD/CD or /var/lib/mpd/music/My CDs"
 _log_debug "${MUSIC_SUB_DIR}                                               # CD"
 _log_debug "${_G_DISCID_DIR}    # /var/lib/mpd/music/My CDs/.Music CDs Ripped"
-_log_debug "${_LOCKNAME}                                # /var/lock/${_SCRIPTNAME}.lock"
+_log_debug "${_LOCKNAME}              # /var/lock/${_SCRIPTNAME}.lock"
 _log_debug "${TEMP_DIR}                                           # /run"
 _log_debug "${LOGFILE}                # /var/log/${_SCRIPTNAME}.log"
 
@@ -928,7 +936,7 @@ if [ 0 -ne "${RV}" ]; then
 		# Ensure that 'abcde' does not fail if it finds a previous unfinished rip.
 		_cleanup_abcde
 
-		# Allow 'abcde' acess to these variables.
+		# Allow 'abcde' access to these variables.
 		# Export needed things so they can be read in this subshell.
 
 		export	LOG_LEVEL_NOLOG
@@ -947,6 +955,7 @@ if [ 0 -ne "${RV}" ]; then
 		export	_G_DISCID_DIR		# '/var/lib/mpd/music/My CDs/.Music CDs Ripped'
 		export	TEMP_DIR		# '/run'
 		export	LOGFILE			# '/var/log/${_SCRIPTNAME}.log'
+		export	GENRES_TO_CONVERT_FILE
 
 		# Enable our traps for 'abcde'.
 		#
@@ -986,36 +995,28 @@ if [ 0 -ne "${RV}" ]; then
 		# TEST: Do the ripping.
 		# Use Unix PIPES to read and encode in one step.
 		# Duration: 3:40
-		# { ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" -P 2-3 >> "${LOGFILE}"; } 2>&1
+		# { ${CMD_ABCDE} -c "${_ABCDE_CONFIG}" -P 2-3 >> "${LOGFILE}"; } 2>&1
 
 		# TEST: Normal read and encode.
 		# Duration: 3:10
-		# { ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 2-3 >> "${LOGFILE}"; } 2>&1
+		# { ${CMD_ABCDE} -c "${_ABCDE_CONFIG}" 2-3 >> "${LOGFILE}"; } 2>&1
 
 
 
-#		# TEST: Use the original 'abcde'.
-#		{ ${CMD_ABCDE} -c "${_ABCDE_CONFIG}" 2 >> "${LOGFILE}"; } 2>&1
-
-#		# TEST: Use the patched 'abcde-patched'.
-#		{ ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 2 >> "${LOGFILE}"; } 2>&1
-
-
-
-		# Any error from the 'abcde' ripping software will result in an immediate
-		# call to '_abcde_exit_error' here. This will eject the cd and clean up
-		# the 'abcde' temporary directory.
+		# Any error from the 'abcde' ripping software will result in an immediate call to '_abcde_exit_error'.
+		# This will eject the cd and clean up the 'abcde' temporary directory.
 		if [ "${LOG_LEVEL_DEBUG}" -eq "${_LOG_LEVEL}" ]; then
 			# We only rip and tag one track when in debug mode
 			# and also display the full text output of 'abcde'.
 			# Run 2 encoder jobs while it rips: -j 2 Is this the same as MAXPROCS=2 ?
-			_G_RESULT=$( { ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" 1 >> "${LOGFILE}"; } 2>&1 )
+			_G_RESULT=$( { ${CMD_ABCDE} -c "${_ABCDE_CONFIG}" 1 >> "${LOGFILE}"; } 2>&1 )
 
 			RV=$?
 
 			_log_result "${_G_RESULT}"
 		else
-			{ ${_CMD_ABCDE_PATCHED} -c "${_ABCDE_CONFIG}" >> "${LOGFILE}"; } 2>&1
+			# Use the original 'abcde' version.
+			{ ${CMD_ABCDE} -c "${_ABCDE_CONFIG}" >> "${LOGFILE}"; } 2>&1
 
 			RV=$?
 		fi
@@ -1044,6 +1045,7 @@ if [ 0 -ne "${RV}" ]; then
 		export	-n	_G_DISCID_DIR
 		export	-n	TEMP_DIR
 		export	-n	LOGFILE
+		export	-n	GENRES_TO_CONVERT_FILE
 
 		_log_if_fatal_and_exit "${RV}" 21 "Ripping failed. 'abcde'"
 
@@ -1059,6 +1061,7 @@ if [ 0 -ne "${RV}" ]; then
 
 
 
+	# Truncate the library cache so Library panel reloads from scratch.
 	${CMD_TRUNCATE} "${MOODE_LIB_CACHE_FILE}" --size 0 > /dev/null
 
 	RV=$?
