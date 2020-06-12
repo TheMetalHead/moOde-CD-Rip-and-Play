@@ -10,6 +10,32 @@
 
 #######################################################################
 #
+# v1.2	(12-Jun-2020)
+#
+#######################################################################
+
+Updates
+	Genre tagging is finally sorted.
+
+	Install-cd-rip.sh
+		Does not create the 'abcde-patched' file anymore.
+
+	Update-cd-rip.sh
+		The update file now checks the repository for the latest software version.
+
+	Remove-cd-rip.sh
+		Added the option for the user to leave/remove the following programs:
+			"abcde" "cd-discid" "eject" "cdparanoia" "lame" "flac" "mpcenc" "glyrc" "eyeD3"
+
+	cd-rip-and-or-play.sh
+		Removed the need for the 'abcde-patched' file.
+
+	abcde.conf
+		The tagging is now done after the files have been ripped and renamed.
+		Allow the user to change some genre tags to ones defined in 'genres-to-convert.txt'.
+
+#######################################################################
+#
 # v1.1	(8-Jun-2020)
 #
 #######################################################################
@@ -17,7 +43,8 @@
 Updates
 
 	Allow rip to mp3 and/or flac and/or Musepack files.
-	Allow mapping for missing genre.
+	Allow mapping for missing genre. 'abcde' only has 148 options.
+		'eyeD3' has 191 options.
 	Added cdtext to the list of lookup methods.
 	Selects the best format of flac, mpc or mp3 to play in mpd.
 	Added command line script to do a painless update.
