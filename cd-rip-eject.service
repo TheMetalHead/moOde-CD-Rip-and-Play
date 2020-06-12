@@ -12,7 +12,7 @@ RemainAfterExit=no
 
 ExecStart=/home/pi/Src/cd-rip/cd-rip-eject.sh
 
-# ExecStop=killall cd-rip-eject.sh
+ExecStop=killall -q cd-rip-eject.sh
 
 # StandardOutput=null
 
