@@ -93,7 +93,7 @@ readonly	_CMD_METAFLAC="/usr/bin/metaflac"
 readonly	_CMD_MPCENC="/usr/bin/mpcenc"
 
 # This software version.
-readonly	_SW_VERSION="1.1"
+readonly	_SW_VERSION="1.2"
 
 
 
