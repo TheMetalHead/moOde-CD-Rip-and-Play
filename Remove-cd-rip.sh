@@ -57,7 +57,13 @@ readonly	FULLPATHNAME=$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null||echo "$0")
 # /home/pi/Src/cd-rip
 readonly	DIRECTORY=$(dirname "${FULLPATHNAME}")
 
+# The file with the list of cd genres to convert to abcde genres.
+# This will also have '.txt' as the extension.
+readonly	GENRES_TO_CONVERT_FILE="${DIRECTORY}/genres-to-convert"
+
 readonly	CD_RIP_AND_OR_PLAY="cd-rip-and-or-play"
+
+readonly	LOGROTATE_FILE="/etc/logrotate.d/${CD_RIP_AND_OR_PLAY}"
 
 readonly	LOGFILE="/var/log/${CD_RIP_AND_OR_PLAY}.log"
 
@@ -68,8 +74,6 @@ readonly	UDEV_RULE="99-srX.rules"
 readonly	SYSTEMD_EJECT_SERVICE="cd-rip-eject.service"
 
 readonly	SYSTEMD_RIP_SERVICE="${CD_RIP_AND_OR_PLAY}.service"
-
-readonly	ABCDE_PATCHED="abcde-patched"
 
 
 
@@ -412,7 +416,7 @@ check_config_file
 ##################################################################
 
 # For some reason '_get_yes_no()' changes the working directory.
-# In fact, any function call will changes the working directory.
+# In fact, any function call will change the working directory.
 # WHY? WHY? WHY? WHY? WHY?
 #
 # This is a hack...
@@ -445,8 +449,8 @@ echo "--------------------------------------------------------------------------
 echo ""
 echo "Checking that our cd ripper files exist."
 
-for FILE_TO_CHECK in "${UDEV_RULE}" "${SYSTEMD_EJECT_SERVICE}" "${SYSTEMD_RIP_SERVICE}" "abcde.conf" "cd-rip-and-or-play" \
-			"cd-rip-and-or-play.sh" "${CDRIP_CONFIG}" "cd-rip-eject.sh" "Install-cd-rip.sh" "Remove-cd-rip.sh"
+for FILE_TO_CHECK in "${UDEV_RULE}" "${SYSTEMD_EJECT_SERVICE}" "${SYSTEMD_RIP_SERVICE}" "cd-rip-and-or-play.sh" \
+			"abcde.conf" "${CDRIP_CONFIG}" "cd-rip-eject.sh" "Install-cd-rip.sh" "Remove-cd-rip.sh"
 do
 	# If the file does not exist.
 	if [ ! -e "${FILE_TO_CHECK}" ]; then
@@ -580,21 +584,16 @@ _display_ok
 
 echo "Checking for installed logrotate file."
 
-# cd "/etc/logrotate.d"
-_cd_func "/etc/logrotate.d"
-
-_check_command_and_exit_if_error "${?}" 19 "Cannot change directory to: /etc/logrotate.d"
-
 # If the file exists and is a symbolic link.
-if [[ -L "${CD_RIP_AND_OR_PLAY}" ]]; then
-	echo "Removing logrotate link: '${CD_RIP_AND_OR_PLAY}'"
+if [[ -L "${LOGROTATE_FILE}" ]]; then
+	echo "Removing logrotate link: '${LOGROTATE_FILE}'"
 
-	# cd-rip-and-or-play
-	rm -f "${CD_RIP_AND_OR_PLAY}"
+	# /etc/logrotate.d/cd-rip-and-or-play
+	rm -f "${LOGROTATE_FILE}"
 
-	_check_command_and_exit_if_error "${?}" 20 "Cannot remove logrotate link: ${CD_RIP_AND_OR_PLAY}"
+	_check_command_and_exit_if_error "${?}" 19 "Cannot remove logrotate link: ${LOGROTATE_FILE}"
 else
-	echo "No logrotate link found to remove: '${CD_RIP_AND_OR_PLAY}'"
+	echo "No logrotate link found to remove: '${LOGROTATE_FILE}'"
 fi
 
 _display_ok
@@ -605,7 +604,7 @@ _display_ok
 # Remove the installed programs.
 ##################################################################
 
-echo "Checking for the installed programs to remove."
+echo "Checking for the installed cd audio programs to remove."
 
 PROGRAMS_TO_REMOVE=()
 
@@ -633,9 +632,34 @@ done
 
 _display_ok
 
+
+
 if [[ -n "${PROGRAMS_TO_REMOVE[*]}" ]]; then
+	# For some reason '_get_yes_no()' changes the working directory.
+	# In fact, any function call will change the working directory.
+	# WHY? WHY? WHY? WHY? WHY?
+	#
+	# This is a hack...
+	pushd "." > /dev/null				# Save the current directory on the stack and change to "."
+
 	echo "The following programs will be removed: ${PROGRAMS_TO_REMOVE[*]}"
-	echo "Removing the installed programs."
+
+	# Returns 1 if YES else 0 if NO.
+	_get_yes_no "Continue"
+
+	RV="${?}"
+
+	# This is a hack...
+	popd > /dev/null				# Restore the save directory from the stack.
+
+	if [[ 0 -eq "${RV}" ]]; then
+		# No
+		echo -e "${BYellow}Aborted...${Colour_Off}"
+
+		exit 20
+	fi
+
+	echo "Removing the programs."
 
 	apt update
 
@@ -643,35 +667,9 @@ if [[ -n "${PROGRAMS_TO_REMOVE[*]}" ]]; then
 
 	apt purge --auto-remove "${PROGRAMS_TO_REMOVE[@]}"
 
-	_check_command_and_exit_if_error "${?}" 22 "Removing installed programs failed."
+	_check_command_and_exit_if_error "${?}" 22 "Removing programs failed."
 else
 	echo "No programs found to remove."
-fi
-
-_display_ok
-
-
-
-##################################################################
-# Remove the patched version of 'abcde' if required.
-##################################################################
-
-echo "Changing directory to: ${DIRECTORY}"
-
-# cd "${DIRECTORY}"
-_cd_func "${DIRECTORY}"
-
-_check_command_and_exit_if_error "${?}" 23 "Cannot change directory to: ${DIRECTORY}"
-
-# If the file exists.
-if [ -e "${ABCDE_PATCHED}" ]; then
-	echo "Removing the patched 'abcde' program: ${ABCDE_PATCHED}"
-
-	rm -f "${ABCDE_PATCHED}"
-
-	_check_command_and_exit_if_error "${?}" 24 "Cannot remove patched version of '${ABCDE_PATCHED}'"
-else
-	echo "No patched 'abcde' program to remove: ${ABCDE_PATCHED}"
 fi
 
 _display_ok
@@ -689,7 +687,7 @@ echo "Checking for the cd music storage directory: ${MY_MUSIC_CD_DIR}"
 
 # If the directory does not exist.
 if [[ ! -d "${MY_MUSIC_CD_DIR}" ]]; then
-	_exit_error 25 "Cannot find directory: ${MY_MUSIC_CD_DIR}"
+	_exit_error 23 "Cannot find directory: ${MY_MUSIC_CD_DIR}"
 fi
 
 _display_ok
@@ -711,7 +709,7 @@ if [ -d "${DISCID_DIR}" ]; then
 
 	rm -f -r "${DISCID_DIR}"
 
-	_check_command_and_exit_if_error "${?}" 26 "Cannot remove directory: ${DISCID_DIR}"
+	_check_command_and_exit_if_error "${?}" 24 "Cannot remove directory: ${DISCID_DIR}"
 else
 	echo "No ripped id directory found: ${DISCID_DIR}"
 fi
@@ -729,7 +727,7 @@ echo "Changing directory to: /mnt"
 # cd "/mnt"
 _cd_func "/mnt"
 
-_check_command_and_exit_if_error "${?}" 27 "Cannot change directory to: /mnt"
+_check_command_and_exit_if_error "${?}" 25 "Cannot change directory to: /mnt"
 
 # /mnt/CD
 MNT_CD="/mnt/${MUSIC_MNT_SOURCE}"
@@ -744,7 +742,7 @@ if [[ -d "${MNT_CD}" || -h "${MNT_CD}" ]]; then
 
 	rm "${MNT_CD}"
 
-	_check_command_and_exit_if_error "${?}" 28 "Cannot remove the link to: ${MY_MUSIC_CD_DIR}"
+	_check_command_and_exit_if_error "${?}" 26 "Cannot remove the link to: ${MY_MUSIC_CD_DIR}"
 else
 	echo "No link found: ${MNT_CD}"
 fi
@@ -763,7 +761,7 @@ echo "Changing directory to: ${MPD_MUSIC_DIR}"
 # cd "${MPD_MUSIC_DIR}"
 _cd_func "${MPD_MUSIC_DIR}"
 
-_check_command_and_exit_if_error "${?}" 29 "Cannot change directory to: ${MPD_MUSIC_DIR}"
+_check_command_and_exit_if_error "${?}" 27 "Cannot change directory to: ${MPD_MUSIC_DIR}"
 
 echo "Checking for link: ${LIBRARY_TAG} to: ${MNT_CD}"
 
@@ -777,7 +775,7 @@ if [[ -L "${LIBRARY_TAG}" ]]; then
 
 	rm "${LIBRARY_TAG}"
 
-	_check_command_and_exit_if_error "${?}" 30 "Cannot remove link to: ${LIBRARY_TAG}"
+	_check_command_and_exit_if_error "${?}" 28 "Cannot remove link to: ${LIBRARY_TAG}"
 else
 	echo "Link: ${LIBRARY_TAG} to: ${MNT_CD} not found."
 fi
@@ -795,7 +793,7 @@ echo ""
 
 mpc update
 
-_check_command_and_exit_if_error "${?}" 31 "Cannot get mpd to update."
+_check_command_and_exit_if_error "${?}" 29 "Cannot get mpd to update."
 
 _display_ok
 
@@ -805,15 +803,15 @@ _display_ok
 # Remove the log file.
 ##################################################################
 
-echo "Checking for log file: ${LOGFILE}"
+echo "Checking for log files: ${LOGFILE}.*"
 
 # If the file exists.
 if [ -e "${LOGFILE}" ]; then
-	echo "Removing the log file: ${LOGFILE}"
+	echo "Removing the log files: ${LOGFILE}.*"
 
-	rm -f "${LOGFILE}"
+	rm -f "${LOGFILE}.*"
 
-	_check_command_and_exit_if_error "${?}" 32 "Cannot remove the log file: ${LOGFILE}"
+	_check_command_and_exit_if_error "${?}" 30 "Cannot remove the log files: ${LOGFILE}.*"
 else
 	echo "No log file found: ${LOGFILE}"
 fi
