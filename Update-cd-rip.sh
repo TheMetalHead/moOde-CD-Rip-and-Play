@@ -65,6 +65,12 @@ readonly	CD_RIP_AND_OR_PLAY="cd-rip-and-or-play"
 
 readonly	CDRIP_CONFIG="${CD_RIP_AND_OR_PLAY}.conf"
 
+# File used to store the software version in the repository.
+readonly	VERSION_REPO="VERSION.REPO"
+
+# The users file with the list of cd genres to convert to abcde genres.
+readonly	GENRES_TO_CONVERT_FILE="genres-to-convert.txt"
+
 readonly	UDEV_RULE="99-srX.rules"
 
 readonly	SYSTEMD_EJECT_SERVICE="cd-rip-eject.service"
@@ -270,6 +276,39 @@ _get_yes_no() {
 
 
 
+# Remove leading and trailing spaces.
+_trim_space() {
+	echo $*
+}
+
+
+
+# Returns a global variable called RESULT.
+# 0 is not found or no value.
+#
+# Usage: _get_version	Version_Filename
+#
+_get_version() {
+	RESULT="0"			# Assume version 0
+
+	# If the file exists and is not empty.
+	if [ -s "${1}" ]; then
+		while IFS=' ' read -r LINE || [[ -n "$LINE" ]]; do
+			LINE=$(_trim_space "${LINE}")
+
+			# If the line is not empty.
+			if [ -n "$LINE" ]; then
+				# If it does not start with #.
+				if [[ "${LINE}" != \#* ]]; then
+					RESULT="${LINE}"
+				fi
+			fi
+		done < "$1"
+	fi
+}
+
+
+
 ##################################################################
 ##################################################################
 ##################################################################
@@ -353,7 +392,7 @@ echo ""
 ##################################################################
 
 # For some reason '_get_yes_no()' changes the working directory.
-# In fact, any function call will changes the working directory.
+# In fact, any function call will change the working directory.
 # WHY? WHY? WHY? WHY? WHY?
 #
 # This is a hack...
@@ -386,7 +425,7 @@ echo "--------------------------------------------------------------------------
 echo ""
 echo "Checking our files exist."
 
-for _FILE in "${UDEV_RULE}" "${SYSTEMD_EJECT_SERVICE}" "${SYSTEMD_RIP_SERVICE}" "abcde.conf" "${CD_RIP_AND_OR_PLAY}" \
+for _FILE in "${UDEV_RULE}" "${SYSTEMD_EJECT_SERVICE}" "${SYSTEMD_RIP_SERVICE}" "${CD_RIP_AND_OR_PLAY}" "abcde.conf" \
 		"cd-rip-and-or-play.sh" "${CDRIP_CONFIG}" "cd-rip-eject.sh" "Install-cd-rip.sh" "Remove-cd-rip.sh"
 do
 	# If the file does not exist.
@@ -439,6 +478,62 @@ fi
 
 
 ##################################################################
+# Checking for new version from the repository.
+##################################################################
+
+echo "Getting the current software version from the repository."
+
+wget -q "${UPDATE_REPO}/blob/master/VERSION" -O "${VERSION_REPO}"
+
+_check_command_and_exit_if_error "${?}" 10 "Cannot get the version file."
+
+_get_version "VERSION"			# Look for and get our software version
+
+_OUR_VERSION="${RESULT}"
+
+_get_version "${VERSION_REPO}"		# Get the repository software version
+
+_VERSIONREPO="${RESULT}"
+
+rm -f "${VERSION_REPO}"
+
+_check_command_and_exit_if_error "${?}" 11 "Cannot delete file: ${VERSION_REPO}"
+
+# For testing purposes.
+#_OUR_VERSION="0"			# Update required
+#_VERSIONREPO="1.1"
+#
+#_OUR_VERSION="1.0"			# Update required
+#_VERSIONREPO="1.1"
+#
+#_OUR_VERSION="1.1"			# No update required
+#_VERSIONREPO="1.1"
+#
+#_OUR_VERSION="1.2"			# No update required
+#_VERSIONREPO="1.1"
+
+echo "Our version: '${_OUR_VERSION}'      Repository version: '${_VERSIONREPO}'"
+echo ""
+
+if [[ "${_OUR_VERSION}" == "${_VERSIONREPO}" ]]; then
+	echo "No update required."
+
+	_display_ok
+
+	exit 12
+fi
+
+if [[ "${_OUR_VERSION}" > "${_VERSIONREPO}" ]]; then
+	echo "No update required."
+
+	_display_ok
+
+	exit 13
+fi
+
+
+
+##################################################################
 # Grab the update file from the repository.
 ##################################################################
 
@@ -446,7 +541,7 @@ echo "Grabbing the update file from: ${UPDATE_REPO}"
 
 wget -q "${UPDATE_REPO}/archive/master.zip" -O "${UPDATE_ZIP_FILE}"
 
-_check_command_and_exit_if_error "${?}" 10 "Cannot grab update file."
+_check_command_and_exit_if_error "${?}" 14 "Cannot grab the update file."
 
 _display_ok
 
@@ -456,22 +551,22 @@ _display_ok
 # Make a backup directory.
 ##################################################################
 
-# Backup - 2020-06-08 - 14-23-49
+# Example: Backup - 2020-06-08 - 14-23-49
 BACKUP_DIR="Backup - $(date '+%Y-%m-%d - %H-%M-%S')"
 
 echo "Creating the backup directory: ${BACKUP_DIR}"
 
 mkdir "${BACKUP_DIR}"
 
-_check_command_and_exit_if_error "${?}" 11 "Cannot make the backup directory: ${BACKUP_DIR}"
+_check_command_and_exit_if_error "${?}" 15 "Cannot make the backup directory: ${BACKUP_DIR}"
 
 chown "${RIPPED_MUSIC_OWNER}" "${BACKUP_DIR}"
 
-_check_command_and_exit_if_error "${?}" 12 "Cannot change the owner for: ${BACKUP_DIR}"
+_check_command_and_exit_if_error "${?}" 16 "Cannot change the owner for: ${BACKUP_DIR}"
 
 # If the directory still does not exist. Should not happen.
 if [[ ! -d "${BACKUP_DIR}" ]]; then
-	_exit_error 13 "Cannot find the backup directory: ${BACKUP_DIR}"
+	_exit_error 17 "Cannot find the backup directory: ${BACKUP_DIR}"
 fi
 
 _display_ok
@@ -479,15 +574,15 @@ _display_ok
 
 
 ##################################################################
-# Copy files to the backup directory.
+# Copy the files to the backup directory.
 ##################################################################
 
 echo "Backing up the files to: ${BACKUP_DIR}"
-wcho "Does not backup any sub-directories."
+echo "Does not backup any sub-directories."
 
 find * -maxdepth 0 -type f -exec cp -p '{}' -t "${BACKUP_DIR}" \;
 
-_check_command_and_exit_if_error "${?}" 14 "Cannot backup the files to: ${BACKUP_DIR}"
+_check_command_and_exit_if_error "${?}" 18 "Cannot backup the files to: ${BACKUP_DIR}"
 
 _display_ok
 
@@ -499,16 +594,17 @@ _display_ok
 
 echo "Deleting the old files."
 
-for _FILE in *; do
+for _FILE in "${UDEV_RULE}" "${SYSTEMD_EJECT_SERVICE}" "${SYSTEMD_RIP_SERVICE}" "${CD_RIP_AND_OR_PLAY}" "abcde.conf" \
+		"cd-rip-and-or-play.sh" "${CDRIP_CONFIG}" "cd-rip-eject.sh" "Install-cd-rip.sh" "Remove-cd-rip.sh" \
+		"Update-cd-rip.sh" "changelog.txt" "genres-to-convert" "LICENSE" "README.md" "VERSION"
+do
 	# If the file exists and is a regular file, as opposed to a directory, a device special file or a link.
 	if [[ -f "${_FILE}" ]]; then
-		if [[ "${UPDATE_ZIP_FILE}" != "${_FILE}" ]]; then
-			echo -e "\tFile: ${_FILE}"
+		echo -e "\tDeleting file: ${_FILE}"
 
-			rm -f  "${_FILE}"
+		rm -f "${_FILE}"
 
-			_check_command_and_exit_if_error "${?}" 15 "Cannot delete file: ${_FILE}"
-		fi
+		_check_command_and_exit_if_error "${?}" 19 "Cannot delete file: ${_FILE}"
 	fi
 done
 
@@ -522,13 +618,18 @@ _display_ok
 
 echo "Performing the update."
 
+# Extract to the current directory only.
 unzip -j "${UPDATE_ZIP_FILE}"
 
-_check_command_and_exit_if_error "${?}" 16 "Cannot unzip the update file: ${UPDATE_ZIP_FILE}"
+_check_command_and_exit_if_error "${?}" 20 "Cannot unzip the update file: ${UPDATE_ZIP_FILE}"
 
-chmod 544 *.sh
+chmod 644 *.sh
 
-_check_command_and_exit_if_error "${?}" 17 "Cannot change the mode of the update file to 544: ${UPDATE_ZIP_FILE}"
+_check_command_and_exit_if_error "${?}" 21 "Cannot change the mode of the update file to 644: ${UPDATE_ZIP_FILE}"
+
+rm -f "${UPDATE_ZIP_FILE}"
+
+_check_command_and_exit_if_error "${?}" 22 "Cannot delete the update file: ${UPDATE_ZIP_FILE}"
 
 _display_ok
 
@@ -542,9 +643,26 @@ echo "Restoring the configuration file from: ${BACKUP_DIR}/cd-rip-and-or-play.co
 
 cp -f -p "${BACKUP_DIR}/cd-rip-and-or-play.conf" "cd-rip-and-or-play.conf"
 
-_check_command_and_exit_if_error "${?}" 18 "Cannot restore the configuration file: ${${BACKUP_DIR}/cd-rip-and-or-play.conf"
+_check_command_and_exit_if_error "${?}" 23 "Cannot restore the configuration file: ${BACKUP_DIR}/cd-rip-and-or-play.conf"
 
 _display_ok
+
+
+
+##################################################################
+# Restore the users cd genre to convert file.
+##################################################################
+
+# If the file exists and is a regular file, as opposed to a directory, a device special file or a link.
+if [[ -f "${BACKUP_DIR}/${GENRES_TO_CONVERT_FILE}" ]]; then
+	echo "Restoring the users cd genre to convert file from: ${BACKUP_DIR}/${GENRES_TO_CONVERT_FILE}"
+
+	cp -f -p "${BACKUP_DIR}/${GENRES_TO_CONVERT_FILE}" "${GENRES_TO_CONVERT_FILE}"
+
+	_check_command_and_exit_if_error "${?}" 24 "Cannot restore the users cd genres to convert file: ${BACKUP_DIR}/${GENRES_TO_CONVERT_FILE}"
+
+	_display_ok
+fi
 
 
 
@@ -557,20 +675,33 @@ echo "Changing the owner of the updated files."
 for _FILE in *; do
 	# If the file exists and is a regular file, as opposed to a directory, a device special file or a link.
 	if [[ -f "${_FILE}" ]]; then
-		# Leave these two files as root.
-		if [[ "moOde-CD-Rip-and-Play" != "${_FILE}" ]]; then
-			if [[ "abcde-patched" != "${_FILE}" ]]; then
-				echo "Changing owner of: ${_FILE}"
+		# Leave the logrotate file as root.
+		if [[ "${CD_RIP_AND_OR_PLAY}" != "${_FILE}" ]]; then
+			echo "Changing owner of: ${_FILE}"
 
-				chown "${RIPPED_MUSIC_OWNER}" "${_FILE}"
+			chown "${RIPPED_MUSIC_OWNER}" "${_FILE}"
 
-				_check_command_and_exit_if_error "${?}" 19 "Cannot change the owner of file: ${_FILE}"
-			fi
+			_check_command_and_exit_if_error "${?}" 25 "Cannot change the owner of file: ${_FILE}"
 		fi
 	fi
 done
 
 _display_ok
+
+
+
+##################################################################
+# Delete the patched abcde program as it is not required anymore.
+##################################################################
+
+# If the file exists and is a regular file, as opposed to a directory, a device special file or a link.
+if [[ -f "abcde-patched" ]]; then
+	rm -f "abcde-patched"
+
+	_check_command_and_exit_if_error "${?}" 26 "Cannot delete the patched abcde file: abcde-patched"
+
+	_display_ok
+fi
 
 
 
