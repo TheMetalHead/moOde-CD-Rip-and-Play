@@ -80,6 +80,8 @@ readonly	GENRES_TO_CONVERT_FILE="${_DIRECTORY}/genres-to-convert.txt"
 
 readonly	_LOCKNAME="/var/lock/${_SCRIPTNAME}.lock"
 
+readonly	_DEFAULT_CD_COVER="${_DIRECTORY}/default-cd-cover.jpg"
+
 # The 'abcde.conf' file should be in the same directory as this cd ripping program.
 # /home/pi/Src/cd-rip/abcde.conf
 readonly	_ABCDE_CONFIG="${_DIRECTORY}/abcde.conf"
@@ -237,7 +239,7 @@ _log_error() {
 
 
 _eject_cd() {
-	${CMD_EJECT}
+	${CMD_EJECT} "${CDROM}"
 
 	_write_to_pipe "Ejected-cd"
 }
@@ -956,6 +958,7 @@ if [ 0 -ne "${RV}" ]; then
 		export	TEMP_DIR		# '/run'
 		export	LOGFILE			# '/var/log/${_SCRIPTNAME}.log'
 		export	GENRES_TO_CONVERT_FILE
+		export	_DEFAULT_CD_COVER	# '{_DIRECTORY}/default-cd-cover.jpg'
 
 		# Enable our traps for 'abcde'.
 		#
@@ -1046,6 +1049,7 @@ if [ 0 -ne "${RV}" ]; then
 		export	-n	TEMP_DIR
 		export	-n	LOGFILE
 		export	-n	GENRES_TO_CONVERT_FILE
+		export	-n	_DEFAULT_CD_COVER
 
 		_log_if_fatal_and_exit "${RV}" 21 "Ripping failed. 'abcde'"
 
@@ -1207,11 +1211,6 @@ else
 	if [[ "playing" != "${_G_MPD_STATE}" ]]; then
 		# Saving the playlist as: Saved-User-Playlist
 		_log_log "Saving the playlist as: ${DEFAULT_SAVED_USER_PLAYLIST}"
-
-		# Set the volume to 0.
-		{ ${CMD_ROTVOL} -dn 234 2>&1; } > /dev/null
-
-		_G_MPD_VOLUME="0%"
 
 		# Delete the old saved mpd queue if it exists.
 		{ ${CMD_MPC} -q rm "${DEFAULT_SAVED_USER_PLAYLIST}" 2>&1; } > /dev/null
