@@ -19,7 +19,7 @@ WorkingDirectory=/home/pi/Src/cd-rip
 # Ensure that this has the same path as in 'WorkingDirectory'.
 ExecStart=/home/pi/Src/cd-rip/cd-rip-and-or-play.sh
 
-ExecStop=killall -q abcde-rip.sh
+ExecStop=killall -q abcde
 
 # StandardOutput=null
 
