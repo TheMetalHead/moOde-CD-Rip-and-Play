@@ -135,3 +135,11 @@ After the update, run the script 'Install-cd-rip.sh', there is no need to reboot
 # Usage:
 
   Insert the CD into the drive. The CD will be checked to see if it has been previously ripped. If not, the ripping process will take about 12 minutes. After this, the CD will be ejected and moOde will play the ripped files. If the CD has been previously ripped, it will be ejected and moOde will play the ripped files. More CDs can be inserted for batch queueing.
+
+
+
+# Default cd cover:
+
+	default-cd-cover.jpg comes from https://commons.wikimedia.org/wiki/File:CD_icon_test.svg under the license of https://commons.wikimedia.org/wiki/Commons:GNU_Free_Documentation_License,_version_1.2
+
+	No changes were made to the cover.
